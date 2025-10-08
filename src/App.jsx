@@ -5,7 +5,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import TektonWelcome from "./pages/TektonWelcome";
 import Login from "./Login/Login"; 
 import Signup from "./Signup/Signup"; 
-// import Dashboard from "./pages/Dashboard"; // optional
+import Dashboard from "./Dashboard/Dashboard"; 
+import Profile from "./Profile/profile";
 
 function App() {
   return (
@@ -15,7 +16,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         {/* Add more routes here as needed */}
         <Route path="/signup" element={<Signup />} /> 
-        {/* <Route path="/dashboard" element={<Dashboard />} /> */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/profile" element={<Profile />} />
       </Routes>
     </Router>
   );
