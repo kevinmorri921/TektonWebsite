@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
 
 const TektonWelcome = () => {
   useEffect(() => {
@@ -57,18 +58,19 @@ const TektonWelcome = () => {
           geophysics since 2012.
         </p>
         <div className="buttons flex flex-wrap justify-center gap-6 w-full">
-          <a
-            href="signup.php"
-            className="btn bg-white text-blue-800 font-semibold px-10 py-3 rounded-lg hover:bg-gray-200 transition-all"
+          <Link
+            to="/signup"
+            className="btn border border-white text-white font-semibold px-10 py-3 rounded-lg hover:bg-white hover:text-blue-800 transition-all"
           >
             Sign Up
-          </a>
-          <a
-            href="login.php"
+          </Link>
+          
+          <Link
+            to="/login"
             className="btn border border-white text-white font-semibold px-10 py-3 rounded-lg hover:bg-white hover:text-blue-800 transition-all"
           >
             Log In
-          </a>
+          </Link>
         </div>
       </main>
 
