@@ -112,6 +112,15 @@ const Login = () => {
               Sign Up
             </button>
           </p>
+          <p className="text-center mt-6 text-gray-700">
+            Don’t have an account?{" "}
+            <button
+              onClick={() => navigate("/delete")}
+              className="text-blue-700 hover:underline"
+            >
+              delete
+            </button>
+          </p>
         </div>
       </div>
     </div>

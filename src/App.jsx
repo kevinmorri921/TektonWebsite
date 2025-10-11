@@ -7,17 +7,20 @@ import Login from "./Login/Login";
 import Signup from "./Signup/Signup"; 
 import Dashboard from "./Dashboard/Dashboard"; 
 import Profile from "./Profile/profile";
-
+import Delete from "./Delete/delete";
+import Settings from "./Settings/settings";
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<TektonWelcome />} />
         <Route path="/login" element={<Login />} />
-        {/* Add more routes here as needed */}
         <Route path="/signup" element={<Signup />} /> 
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/delete" element={<Delete />} />
+        <Route path="/settings" element={<Settings />} />
+        
       </Routes>
     </Router>
   );
