@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // for navigation
- 
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const Login = () => {
   const navigate = useNavigate();
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false); // ✅ Moved here (top-level hook)
 
   // Handle input change
   const handleChange = (e) => {
@@ -15,21 +16,25 @@ const Login = () => {
   // Handle form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+    setMessage("");
 
     try {
-      const res = await axios.post("http://localhost:5000/api/login", form); 
-      // ^ Replace this with your backend login route
+      const res = await axios.post("http://localhost:5000/api/login", form);
 
       if (res.data.success) {
-        localStorage.setItem("token", res.data.token); // save JWT or session token
-        localStorage.setItem("fullname", res.data.fullname);
-        navigate("/dashboard"); // redirect to dashboard page
-      } else {
+  console.log("✅ Login success — navigating to dashboard now");
+  localStorage.setItem("token", res.data.token);
+  localStorage.setItem("fullname", res.data.fullname);
+  navigate("/delete");
+} else {
         setMessage(res.data.message || "Login failed. Please try again.");
       }
     } catch (err) {
-      console.error(err);
-      setMessage("⚠ Server error. Please try again later.");
+      console.error("Login error:", err.response ? err.response.data : err.message);
+      setMessage(err.response?.data?.message || "⚠ Server error. Please try again later.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -97,9 +102,12 @@ const Login = () => {
 
             <button
               type="submit"
-              className="w-full bg-blue-700 text-white py-3 rounded-lg hover:bg-blue-800 transition-all font-semibold"
+              disabled={loading} // ✅ Disable while loading
+              className={`w-full bg-blue-700 text-white py-3 rounded-lg font-semibold transition-all ${
+                loading ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-800"
+              }`}
             >
-              LOGIN
+              {loading ? "Logging in..." : "LOGIN"}
             </button>
           </form>
 
@@ -110,15 +118,6 @@ const Login = () => {
               className="text-blue-700 hover:underline"
             >
               Sign Up
-            </button>
-          </p>
-          <p className="text-center mt-6 text-gray-700">
-            Don’t have an account?{" "}
-            <button
-              onClick={() => navigate("/delete")}
-              className="text-blue-700 hover:underline"
-            >
-              delete
             </button>
           </p>
         </div>
