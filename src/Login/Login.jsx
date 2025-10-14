@@ -26,7 +26,7 @@ const Login = () => {
   console.log("✅ Login success — navigating to dashboard now");
   localStorage.setItem("token", res.data.token);
   localStorage.setItem("fullname", res.data.fullname);
-  navigate("/delete");
+  navigate("/dashboard");
 } else {
         setMessage(res.data.message || "Login failed. Please try again.");
       }

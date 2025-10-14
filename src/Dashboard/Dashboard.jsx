@@ -1,55 +1,48 @@
+// src/Dashboard/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [fullname, setFullname] = useState("");
   const [loading, setLoading] = useState(true);
+  const [fullname, setFullname] = useState("");
 
-  // Fetch user info from backend
   useEffect(() => {
-    const token = localStorage.getItem("token");
-
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    const fetchUser = async () => {
+    const fetchUserData = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/user", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.data.success) {
-          setFullname(res.data.fullname);
+        const storedName = localStorage.getItem("fullname");
+        if (storedName) {
+          setFullname(storedName);
         } else {
-          localStorage.removeItem("token");
-          navigate("/login");
+          // Example API call if no local data
+          const response = await axios.get("https://your-api-endpoint.com/user");
+          setFullname(response.data.fullname || "User");
         }
-      } catch (err) {
-        console.error(err);
-        localStorage.removeItem("token");
+      } catch (error) {
+        console.error("Error fetching user data:", error);
         navigate("/login");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchUser();
+    fetchUserData();
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("fullname");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      await axios.post("https://your-api-endpoint.com/logout");
+      localStorage.removeItem("fullname");
+      navigate("/login");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black text-white text-xl">
-        Loading dashboard...
+      <div className="min-h-screen bg-gradient-to-br from-blue-700 to-blue-500 flex items-center justify-center">
+        <p className="text-white text-lg">Loading...</p>
       </div>
     );
   }
@@ -60,7 +53,7 @@ const Dashboard = () => {
         <h1 className="text-2xl font-bold tracking-wide">Tekton Geometrix</h1>
         <button
           onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold text-white"
+          className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold text-white transition-colors"
         >
           Logout
         </button>
@@ -69,7 +62,7 @@ const Dashboard = () => {
       <div className="flex flex-col items-center justify-center py-16">
         <div className="text-center mb-10">
           <h2 className="text-4xl font-bold mb-2">
-            Welcome, {fullname || "User"} 🎉
+            Welcome, {fullname} 🎉
           </h2>
           <p className="text-lg text-blue-100">
             Here’s a quick overview of your account.
