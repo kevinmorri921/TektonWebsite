@@ -6,9 +6,11 @@ import TektonWelcome from "./pages/TektonWelcome";
 import Login from "./Login/Login";
 import Signup from "./Signup/Signup";
 import Dashboard from "./Dashboard/Dashboard";
+import Analytics from "./Analytics/Analytics";
 import Profile from "./Profile/profile";
 import Delete from "./Delete/delete";
 import Settings from "./Settings/settings";
+
 
 function App() {
   return (
@@ -21,6 +23,7 @@ function App() {
 
         {/* Protected / App routes */}
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/analytics" element={<Analytics />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/delete" element={<Delete />} />
         <Route path="/settings" element={<Settings />} />
