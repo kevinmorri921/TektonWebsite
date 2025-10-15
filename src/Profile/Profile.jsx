@@ -12,7 +12,6 @@ const Profile = () => {
   // Update Fullname
   const handleUpdateName = async (e) => {
     e.preventDefault();
-
     if (!fullname) return setMessage("⚠ Please enter your new name.");
 
     try {
@@ -20,9 +19,7 @@ const Profile = () => {
       const res = await axios.post(
         "http://localhost:5000/api/update-name",
         { fullname },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (res.data.success) {
@@ -41,7 +38,6 @@ const Profile = () => {
   // Change Password
   const handleChangePassword = async (e) => {
     e.preventDefault();
-
     if (!currentPassword || !newPassword)
       return setMessage("⚠ Please fill in all password fields.");
 
@@ -53,9 +49,7 @@ const Profile = () => {
           current_password: currentPassword,
           new_password: newPassword,
         },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (res.data.success) {
@@ -76,7 +70,6 @@ const Profile = () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete your account? This cannot be undone!"
     );
-
     if (!confirmDelete) return;
 
     try {
@@ -98,8 +91,8 @@ const Profile = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-blue-400 text-white">
-      {/* Header */}
+    <div className="w-screen h-screen flex bg-gradient-to-br from-blue-600 to-blue-400 text-white">
+      {/* Back Button */}
       <div className="absolute top-6 left-6">
         <button
           onClick={() => navigate("/dashboard")}
@@ -109,18 +102,27 @@ const Profile = () => {
         </button>
       </div>
 
-      <div className="bg-white text-blue-800 shadow-2xl rounded-2xl p-10 w-[90%] max-w-3xl">
-        <h1 className="text-3xl font-bold mb-4 text-center">Profile Settings</h1>
+      {/* Left Side */}
+      <div className="w-1/2 h-full bg-blue-700 flex flex-col items-center justify-center text-center px-10">
+        <h1 className="text-5xl font-bold mb-6">👤 Profile Settings</h1>
+        <p className="text-xl text-blue-100">
+          Manage your personal information and account security.
+        </p>
+      </div>
+
+      {/* Right Side */}
+      <div className="w-1/2 h-full bg-white text-blue-800 flex flex-col justify-center items-center p-16 overflow-y-auto">
+        <h2 className="text-4xl font-bold mb-8">Account Management</h2>
 
         {message && (
-          <div className="bg-blue-100 text-blue-700 p-3 rounded-md mb-4 text-center">
+          <div className="bg-blue-100 text-blue-700 p-3 rounded-md mb-6 w-96 text-center">
             {message}
           </div>
         )}
 
-        <div className="space-y-8">
+        <div className="w-96 space-y-8">
           {/* Update Name */}
-          <div className="bg-blue-50 p-6 rounded-xl">
+          <div className="bg-blue-50 p-6 rounded-xl shadow-md">
             <h3 className="text-xl font-semibold mb-4">✏️ Update Name</h3>
             <form onSubmit={handleUpdateName} className="space-y-4">
               <input
@@ -133,7 +135,7 @@ const Profile = () => {
               />
               <button
                 type="submit"
-                className="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-800 transition-all"
+                className="w-full bg-blue-700 text-white py-2 rounded-lg hover:bg-blue-800 transition-all"
               >
                 Update
               </button>
@@ -141,7 +143,7 @@ const Profile = () => {
           </div>
 
           {/* Change Password */}
-          <div className="bg-blue-50 p-6 rounded-xl">
+          <div className="bg-blue-50 p-6 rounded-xl shadow-md">
             <h3 className="text-xl font-semibold mb-4">🔑 Change Password</h3>
             <form onSubmit={handleChangePassword} className="space-y-4">
               <input
@@ -162,7 +164,7 @@ const Profile = () => {
               />
               <button
                 type="submit"
-                className="bg-blue-700 text-white py-2 px-4 rounded-lg hover:bg-blue-800 transition-all"
+                className="w-full bg-blue-700 text-white py-2 rounded-lg hover:bg-blue-800 transition-all"
               >
                 Change Password
               </button>
@@ -170,13 +172,13 @@ const Profile = () => {
           </div>
 
           {/* Delete Account */}
-          <div className="bg-red-50 p-6 rounded-xl">
+          <div className="bg-red-50 p-6 rounded-xl shadow-md">
             <h3 className="text-xl font-semibold mb-4 text-red-700">
               ⚠️ Delete Account
             </h3>
             <button
               onClick={handleDeleteAccount}
-              className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-all"
+              className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-all"
             >
               Delete Account
             </button>
@@ -188,3 +190,4 @@ const Profile = () => {
 };
 
 export default Profile;
+
