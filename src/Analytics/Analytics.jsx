@@ -6,7 +6,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
 
-// ✅ Fix missing marker icons issue
+// ✅ Fix missing marker icons (for Vite)
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).href,
@@ -28,21 +28,21 @@ export default function Analytics() {
   ]);
 
   const [activeSurveyIndex, setActiveSurveyIndex] = useState(null);
-  const [detailHtml, setDetailHtml] = useState(
-    "<p>ℹ️ Click on a marker or a survey from the list to see details.</p>"
-  );
+  const [detailHtml, setDetailHtml] = useState("<p>ℹ️ Click a marker or a list item to view details.</p>");
 
-  // Initialize map once
   useEffect(() => {
     if (mapRef.current) return;
 
+    // Initialize map
     mapRef.current = L.map("map", {
       center: [12.8797, 121.774],
       zoom: 6,
     });
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: '&copy; OpenStreetMap contributors',
+    // ✅ Google Maps-like style (Carto Voyager)
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> | <a href="https://carto.com/">CARTO</a>',
     }).addTo(mapRef.current);
 
     markersRef.current = L.markerClusterGroup();
@@ -57,7 +57,6 @@ export default function Analytics() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-render markers when surveyData updates
   useEffect(() => {
     if (!markersRef.current) return;
     renderMarkers(surveyData);
@@ -80,47 +79,43 @@ export default function Analytics() {
 
   function showDetails(point) {
     const html = `
-      <div class="detail-item"><strong>${point.title}</strong></div>
-      <div class="detail-item"><b>📍 Location:</b> ${point.location}</div>
-      <div class="detail-item"><b>👤 Respondent:</b> ${point.respondent}</div>
-      <div class="detail-item"><b>📅 Date:</b> ${point.date}</div>
-      <div class="detail-item"><b>📝 Notes:</b> ${point.notes}</div>
-      <div class="detail-item"><b>🌐 Coordinates:</b> ${point.lat}, ${point.lng}</div>
+      <h4>${point.title}</h4>
+      <p><b>📍 Location:</b> ${point.location}</p>
+      <p><b>👤 Respondent:</b> ${point.respondent}</p>
+      <p><b>📅 Date:</b> ${point.date}</p>
+      <p><b>📝 Notes:</b> ${point.notes}</p>
+      <p><b>🌐 Coordinates:</b> ${point.lat}, ${point.lng}</p>
     `;
     setDetailHtml(html);
   }
 
   async function getLocationName(lat, lng) {
     try {
-      const response = await fetch(
+      const res = await fetch(
         `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
       );
-      const data = await response.json();
+      const data = await res.json();
       if (data && data.address) {
         return (
           data.address.city ||
           data.address.town ||
           data.address.village ||
           data.address.state ||
-          "Unknown Location"
+          "Unknown"
         );
       }
-    } catch (e) {
-      console.error("Reverse geocoding failed:", e);
+    } catch {
+      return "Unknown";
     }
-    return "Unknown Location";
   }
 
   async function handleFileUpload(e) {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files?.length) return;
 
     for (const file of files) {
       const text = await file.text();
-      const lines = text
-        .split(/\r?\n/)
-        .map((l) => l.trim())
-        .filter(Boolean);
+      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
       const newPoints = [];
 
       for (const line of lines) {
@@ -129,15 +124,15 @@ export default function Analytics() {
           const lat = parseFloat(parts[0]);
           const lng = parseFloat(parts[1]);
           if (!isNaN(lat) && !isNaN(lng)) {
-            const locationName = await getLocationName(lat, lng);
+            const loc = await getLocationName(lat, lng);
             newPoints.push({
               lat,
               lng,
               title: `Uploaded Survey ${surveyData.length + newPoints.length + 1}`,
-              location: locationName,
+              location: loc,
               respondent: "N/A",
               date: new Date().toISOString().split("T")[0],
-              notes: "Added from file upload",
+              notes: "Added from upload",
             });
           }
         }
@@ -149,157 +144,141 @@ export default function Analytics() {
     }
   }
 
-  function handleListItemClick(point, index) {
-    if (!mapRef.current) return;
-    mapRef.current.setView([point.lat, point.lng], 12, { animate: true });
-    showDetails(point);
-    setActiveSurveyIndex(index);
-  }
-
   return (
-    <div
-      className="dashboard-page"
-      style={{
-        fontFamily: "Arial, sans-serif",
-        background: "#f4f4f9",
-        minHeight: "100vh",
-      }}
-    >
-      {/* Header */}
-      <header
+    <div style={{ fontFamily: "Inter, Arial, sans-serif", background: "#f9fafb" }}>
+      {/* Navbar */}
+      <nav
         style={{
+          background: "#2563eb",
+          color: "white",
+          padding: "15px 50px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          padding: "15px 25px",
-          background: "#1e3a8a",
-          color: "#fff",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ margin: 0 }}>📊 Analytics & Survey Map</h1>
+        <h1 style={{ fontSize: "1.5rem", margin: 0 }}>📊 Analytics & Survey Map</h1>
         <button
           onClick={() => navigate("/dashboard")}
           style={{
-            background: "#ef4444",
-            color: "white",
+            background: "white",
+            color: "#2563eb",
             border: "none",
             padding: "8px 14px",
-            borderRadius: "8px",
+            borderRadius: "6px",
+            fontWeight: "bold",
             cursor: "pointer",
           }}
         >
           ⬅ Back to Dashboard
         </button>
-      </header>
+      </nav>
 
       {/* Main Content */}
-      <div
-        className="dashboard-container"
-        style={{
-          padding: 20,
-          display: "flex",
-          flexDirection: "column",
-          gap: 20,
-        }}
-      >
-        {/* File Upload Section */}
-        <div
-          className="card"
+      <div style={{ padding: "30px 60px", display: "flex", flexDirection: "column", gap: 30 }}>
+        {/* Upload Section */}
+        <section
           style={{
-            background: "#fff",
-            padding: 16,
-            borderRadius: 12,
-            boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
+            background: "white",
+            borderRadius: 10,
+            padding: 20,
+            boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
           }}
         >
-          <h3>📂 Upload Survey Coordinates (.txt)</h3>
-          <input
-            type="file"
-            id="fileUpload"
-            accept=".txt"
-            multiple
-            onChange={handleFileUpload}
-          />
+          <h2>📂 Upload Coordinates File</h2>
+          <input type="file" accept=".txt" multiple onChange={handleFileUpload} />
           <p style={{ color: "#555" }}>Format: latitude,longitude per line</p>
-        </div>
+        </section>
 
-        {/* Map + List + Details */}
-        <div className="map-section" style={{ display: "flex", gap: 20 }}>
-          {/* Map + Survey List */}
+        {/* Map Section */}
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: "3fr 1fr",
+            gap: 25,
+          }}
+        >
+          {/* Expanded Map */}
           <div
-            className="map-container"
             style={{
-              flex: 3,
-              display: "flex",
-              flexDirection: "column",
-              gap: 20,
+              background: "white",
+              borderRadius: 10,
+              boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+              padding: 10,
             }}
           >
-            <div
-              className="card"
-              style={{
-                background: "#fff",
-                padding: 16,
-                borderRadius: 12,
-                boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
-              }}
-            >
-              <h3>🗺️ Survey Locations</h3>
-              <div
-                id="map"
-                style={{ height: 500, width: "100%", borderRadius: 10 }}
-              ></div>
-            </div>
+            <h2>🗺️ Survey Locations</h2>
+            <div id="map" style={{ height: "80vh", width: "100%", borderRadius: 10 }}></div>
+          </div>
 
+          {/* Sidebar */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            {/* Survey List */}
             <div
-              className="survey-list"
               style={{
-                background: "#fff",
+                background: "white",
                 padding: 15,
-                borderRadius: 12,
-                boxShadow: "0 4px 10px rgba(0,0,0,0.06)",
-                maxHeight: 200,
+                borderRadius: 10,
+                boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+                maxHeight: "40vh",
                 overflowY: "auto",
               }}
             >
               <h3>📋 Survey List</h3>
-              <div id="surveyList">
-                {surveyData.map((point, idx) => (
-                  <div
-                    key={idx}
-                    onClick={() => handleListItemClick(point, idx)}
-                    style={{
-                      padding: 10,
-                      borderBottom: "1px solid #ddd",
-                      cursor: "pointer",
-                      background:
-                        activeSurveyIndex === idx ? "#dbeafe" : "transparent",
-                    }}
-                  >
-                    {point.title} - {point.location}
-                  </div>
-                ))}
-              </div>
+              {surveyData.map((point, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    showDetails(point);
+                    setActiveSurveyIndex(i);
+                    mapRef.current.setView([point.lat, point.lng], 12);
+                  }}
+                  style={{
+                    padding: "8px 10px",
+                    marginBottom: 5,
+                    borderRadius: 6,
+                    background:
+                      activeSurveyIndex === i ? "#e0f2fe" : "transparent",
+                    cursor: "pointer",
+                  }}
+                >
+                  <b>{point.title}</b>
+                  <div style={{ fontSize: "0.9rem", color: "#555" }}>{point.location}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Details */}
+            <div
+              style={{
+                background: "white",
+                padding: 15,
+                borderRadius: 10,
+                boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+                flex: 1,
+              }}
+            >
+              <h3>📄 Details</h3>
+              <div dangerouslySetInnerHTML={{ __html: detailHtml }} />
             </div>
           </div>
-
-          {/* Details Panel */}
-          <div
-            className="details-panel"
-            style={{
-              flex: 1,
-              background: "#fff",
-              padding: 20,
-              borderRadius: 12,
-              boxShadow: "0 4px 10px rgba(0,0,0,0.1)",
-              height: "fit-content",
-            }}
-          >
-            <h3>📋 Survey Details</h3>
-            <div id="surveyDetails" dangerouslySetInnerHTML={{ __html: detailHtml }} />
-          </div>
-        </div>
+        </section>
       </div>
+
+      {/* Footer */}
+      <footer
+        style={{
+          textAlign: "center",
+          padding: "15px",
+          background: "#f1f5f9",
+          color: "#555",
+          marginTop: 30,
+          fontSize: "0.9rem",
+        }}
+      >
+        © {new Date().getFullYear()} Survey Analytics — All rights reserved.
+      </footer>
     </div>
   );
 }
