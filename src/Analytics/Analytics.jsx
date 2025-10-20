@@ -145,7 +145,13 @@ export default function Analytics() {
   }
 
   return (
-    <div style={{ fontFamily: "Inter, Arial, sans-serif", background: "#f9fafb" }}>
+    <div
+      style={{
+        fontFamily: "Inter, Arial, sans-serif",
+        background: "#f9fafb",
+        color: "black", // ✅ make all text black
+      }}
+    >
       {/* Navbar */}
       <nav
         style={{
@@ -158,7 +164,9 @@ export default function Analytics() {
           boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
         }}
       >
-        <h1 style={{ fontSize: "1.5rem", margin: 0 }}>📊 Analytics & Survey Map</h1>
+        <h1 style={{ fontSize: "1.5rem", margin: 0, color: "white" }}>
+          📊 Analytics & Survey Map
+        </h1>
         <button
           onClick={() => navigate("/dashboard")}
           style={{
@@ -184,11 +192,12 @@ export default function Analytics() {
             borderRadius: 10,
             padding: 20,
             boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+            color: "black",
           }}
         >
           <h2>📂 Upload Coordinates File</h2>
           <input type="file" accept=".txt" multiple onChange={handleFileUpload} />
-          <p style={{ color: "#555" }}>Format: latitude,longitude per line</p>
+          <p style={{ color: "black" }}>Format: latitude,longitude per line</p>
         </section>
 
         {/* Map Section */}
@@ -197,15 +206,17 @@ export default function Analytics() {
             display: "grid",
             gridTemplateColumns: "3fr 1fr",
             gap: 25,
+            color: "black",
           }}
         >
-          {/* Expanded Map */}
+          {/* Map */}
           <div
             style={{
               background: "white",
               borderRadius: 10,
               boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
               padding: 10,
+              color: "black",
             }}
           >
             <h2>🗺️ Survey Locations</h2>
@@ -213,7 +224,7 @@ export default function Analytics() {
           </div>
 
           {/* Sidebar */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, color: "black" }}>
             {/* Survey List */}
             <div
               style={{
@@ -223,6 +234,7 @@ export default function Analytics() {
                 boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
                 maxHeight: "40vh",
                 overflowY: "auto",
+                color: "black",
               }}
             >
               <h3>📋 Survey List</h3>
@@ -241,10 +253,11 @@ export default function Analytics() {
                     background:
                       activeSurveyIndex === i ? "#e0f2fe" : "transparent",
                     cursor: "pointer",
+                    color: "black",
                   }}
                 >
                   <b>{point.title}</b>
-                  <div style={{ fontSize: "0.9rem", color: "#555" }}>{point.location}</div>
+                  <div style={{ fontSize: "0.9rem", color: "black" }}>{point.location}</div>
                 </div>
               ))}
             </div>
@@ -257,6 +270,7 @@ export default function Analytics() {
                 borderRadius: 10,
                 boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
                 flex: 1,
+                color: "black",
               }}
             >
               <h3>📄 Details</h3>
@@ -272,7 +286,7 @@ export default function Analytics() {
           textAlign: "center",
           padding: "15px",
           background: "#f1f5f9",
-          color: "#555",
+          color: "black", // ✅ black footer text
           marginTop: 30,
           fontSize: "0.9rem",
         }}
