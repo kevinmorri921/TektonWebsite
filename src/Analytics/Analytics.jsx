@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
+import axios from "axios";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
@@ -19,27 +20,33 @@ export default function Analytics() {
   const mapRef = useRef(null);
   const markersRef = useRef(null);
 
-  const [surveyData, setSurveyData] = useState([
-    { lat: 14.5995, lng: 120.9842, title: "Survey 1", location: "Manila", respondent: "Juan Dela Cruz", date: "2025-09-20", notes: "Metro survey" },
-    { lat: 10.3157, lng: 123.8854, title: "Survey 2", location: "Cebu", respondent: "Maria Santos", date: "2025-09-21", notes: "Visayas feedback" },
-    { lat: 7.1907, lng: 125.4553, title: "Survey 3", location: "Davao", respondent: "Jose Ramirez", date: "2025-09-22", notes: "Mindanao survey" },
-    { lat: 16.4023, lng: 120.5960, title: "Survey 4", location: "Baguio", respondent: "Anna Lopez", date: "2025-09-23", notes: "Highland feedback" },
-    { lat: 6.9214, lng: 122.0790, title: "Survey 5", location: "Zamboanga", respondent: "Pedro Cruz", date: "2025-09-24", notes: "Community input" },
-  ]);
+  const [surveyData, setSurveyData] = useState([]);
+  const API_URL = "http://localhost:5000/api/markers";
 
-  const [activeSurveyIndex, setActiveSurveyIndex] = useState(null);
-  const [detailHtml, setDetailHtml] = useState("<p>ℹ️ Click a marker or a list item to view details.</p>");
+  // ✅ Load markers from backend
+  useEffect(() => {
+    fetchMarkers();
+  }, []);
 
+  const fetchMarkers = async () => {
+    try {
+      const res = await axios.get(API_URL);
+      setSurveyData(res.data);
+    } catch (err) {
+      console.error("Error fetching markers:", err);
+      alert("Failed to load markers from the database!");
+    }
+  };
+
+  // ✅ Initialize map
   useEffect(() => {
     if (mapRef.current) return;
 
-    // Initialize map
     mapRef.current = L.map("map", {
       center: [12.8797, 121.774],
       zoom: 6,
     });
 
-    // ✅ Google Maps-like style (Carto Voyager)
     L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> | <a href="https://carto.com/">CARTO</a>',
@@ -47,89 +54,104 @@ export default function Analytics() {
 
     markersRef.current = L.markerClusterGroup();
     mapRef.current.addLayer(markersRef.current);
-
-    renderMarkers(surveyData);
-
-    return () => {
-      mapRef.current.remove();
-      mapRef.current = null;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ✅ Re-render markers when surveyData updates
   useEffect(() => {
     if (!markersRef.current) return;
     renderMarkers(surveyData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [surveyData]);
 
+  // ✅ Render markers with default Leaflet marker + hover + click
   function renderMarkers(data) {
     markersRef.current.clearLayers();
 
-    data.forEach((point, index) => {
+    data.forEach((point) => {
       const marker = L.marker([point.lat, point.lng]);
-      marker.on("click", () => {
-        showDetails(point);
-        setActiveSurveyIndex(index);
-        mapRef.current.setView([point.lat, point.lng], 12, { animate: true });
+
+      // Popup info
+      marker.bindPopup(`
+        <div style="min-width:200px;">
+          <b>${point.title || "Untitled Survey"}</b><br/>
+          📍 <b>Location:</b> ${point.location || "Unknown"}<br/>
+          👤 <b>Respondent:</b> ${point.respondent || "N/A"}<br/>
+          📅 <b>Date:</b> ${point.date || "N/A"}<br/>
+          📝 <b>Notes:</b> ${point.notes || "None"}<br/>
+          🌐 (${point.lat.toFixed(4)}, ${point.lng.toFixed(4)})
+        </div>
+      `);
+
+      // Hover effect (enlarge marker)
+      marker.on("mouseover", (e) => {
+        e.target.setIcon(
+          new L.Icon({
+            iconUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).href,
+            iconSize: [50, 82], // bigger on hover
+            iconAnchor: [25, 82],
+            popupAnchor: [1, -34],
+            shadowUrl: new URL("leaflet/dist/images/marker-shadow.png", import.meta.url).href,
+            shadowSize: [41, 41],
+          })
+        );
       });
+
+      marker.on("mouseout", (e) => {
+        e.target.setIcon(new L.Icon.Default());
+      });
+
+      // Click -> open new tab
+      marker.on("click", () => {
+        window.open(`/survey/${point._id || ""}`, "_blank");
+      });
+
       markersRef.current.addLayer(marker);
     });
   }
 
-  function showDetails(point) {
-    const html = `
-      <h4>${point.title}</h4>
-      <p><b>📍 Location:</b> ${point.location}</p>
-      <p><b>👤 Respondent:</b> ${point.respondent}</p>
-      <p><b>📅 Date:</b> ${point.date}</p>
-      <p><b>📝 Notes:</b> ${point.notes}</p>
-      <p><b>🌐 Coordinates:</b> ${point.lat}, ${point.lng}</p>
-    `;
-    setDetailHtml(html);
-  }
-
-  async function getLocationName(lat, lng) {
-    try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json`
-      );
-      const data = await res.json();
-      if (data && data.address) {
-        return (
-          data.address.city ||
-          data.address.town ||
-          data.address.village ||
-          data.address.state ||
-          "Unknown"
-        );
-      }
-    } catch {
-      return "Unknown";
-    }
-  }
-
+  // ✅ Handle file upload
   async function handleFileUpload(e) {
     const files = e.target.files;
     if (!files?.length) return;
 
+    const newPoints = [];
+
     for (const file of files) {
       const text = await file.text();
-      const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
-      const newPoints = [];
 
-      for (const line of lines) {
-        const parts = line.split(",").map((p) => p.trim());
-        if (parts.length === 2) {
-          const lat = parseFloat(parts[0]);
-          const lng = parseFloat(parts[1]);
+      if (file.name.endsWith(".json")) {
+        try {
+          const json = JSON.parse(text);
+          if (Array.isArray(json)) {
+            for (const item of json) {
+              if (item.lat && item.lng) {
+                newPoints.push({
+                  lat: parseFloat(item.lat),
+                  lng: parseFloat(item.lng),
+                  title: item.title || "Uploaded JSON Survey",
+                  location: item.location || "Unknown",
+                  respondent: item.respondent || "N/A",
+                  date: item.date || new Date().toISOString().split("T")[0],
+                  notes: item.notes || "Added from JSON upload",
+                });
+              }
+            }
+          }
+        } catch (err) {
+          alert("Invalid JSON file format!");
+          console.error(err);
+        }
+      } else {
+        const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+        for (const line of lines) {
+          const [latStr, lngStr] = line.split(",").map((p) => p.trim());
+          const lat = parseFloat(latStr);
+          const lng = parseFloat(lngStr);
           if (!isNaN(lat) && !isNaN(lng)) {
-            const loc = await getLocationName(lat, lng);
             newPoints.push({
               lat,
               lng,
-              title: `Uploaded Survey ${surveyData.length + newPoints.length + 1}`,
-              location: loc,
+              title: `Uploaded Survey ${newPoints.length + 1}`,
+              location: "Unknown",
               respondent: "N/A",
               date: new Date().toISOString().split("T")[0],
               notes: "Added from upload",
@@ -137,147 +159,59 @@ export default function Analytics() {
           }
         }
       }
+    }
 
-      if (newPoints.length) {
-        setSurveyData((prev) => [...prev, ...newPoints]);
+    if (newPoints.length) {
+      try {
+        await Promise.all(newPoints.map((point) => axios.post(API_URL, point)));
+        alert(`${newPoints.length} marker(s) uploaded successfully!`);
+        fetchMarkers();
+      } catch (err) {
+        console.error("Error saving markers:", err);
+        alert("Failed to save some markers to MongoDB!");
       }
     }
   }
 
   return (
-    <div style={{ fontFamily: "Inter, Arial, sans-serif", background: "#f9fafb" }}>
+    <div className="font-inter bg-gray-50 min-h-screen flex flex-col">
       {/* Navbar */}
-      <nav
-        style={{
-          background: "#2563eb",
-          color: "white",
-          padding: "15px 50px",
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-        }}
-      >
-        <h1 style={{ fontSize: "1.5rem", margin: 0 }}>📊 Analytics & Survey Map</h1>
+      <nav className="bg-blue-600 text-white px-12 py-4 flex justify-between items-center shadow-md">
+        <h1 className="text-2xl font-semibold">📊 Analytics & Survey Map</h1>
         <button
           onClick={() => navigate("/dashboard")}
-          style={{
-            background: "white",
-            color: "#2563eb",
-            border: "none",
-            padding: "8px 14px",
-            borderRadius: "6px",
-            fontWeight: "bold",
-            cursor: "pointer",
-          }}
+          className="bg-white text-blue-600 px-4 py-2 rounded-md font-semibold hover:bg-blue-100 transition"
         >
           ⬅ Back to Dashboard
         </button>
       </nav>
 
-      {/* Main Content */}
-      <div style={{ padding: "30px 60px", display: "flex", flexDirection: "column", gap: 30 }}>
-        {/* Upload Section */}
-        <section
-          style={{
-            background: "white",
-            borderRadius: 10,
-            padding: 20,
-            boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-          }}
-        >
-          <h2>📂 Upload Coordinates File</h2>
-          <input type="file" accept=".txt" multiple onChange={handleFileUpload} />
-          <p style={{ color: "#555" }}>Format: latitude,longitude per line</p>
-        </section>
+      {/* Upload Section */}
+      <section className="bg-white rounded-xl shadow-md p-6 m-8">
+        <h2 className="text-xl font-semibold mb-2">📂 Upload Coordinates File</h2>
+        <input
+          type="file"
+          accept=".txt,.json"
+          multiple
+          onChange={handleFileUpload}
+          className="mt-2 mb-3"
+        />
+        <p className="text-gray-600 text-sm leading-relaxed">
+          Supported formats:
+          <br /> • <b>.txt</b>: latitude,longitude per line
+          <br /> • <b>.json</b>: array of objects with <code>lat</code> and <code>lng</code>
+        </p>
+      </section>
 
-        {/* Map Section */}
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "3fr 1fr",
-            gap: 25,
-          }}
-        >
-          {/* Expanded Map */}
-          <div
-            style={{
-              background: "white",
-              borderRadius: 10,
-              boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-              padding: 10,
-            }}
-          >
-            <h2>🗺️ Survey Locations</h2>
-            <div id="map" style={{ height: "80vh", width: "100%", borderRadius: 10 }}></div>
-          </div>
-
-          {/* Sidebar */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-            {/* Survey List */}
-            <div
-              style={{
-                background: "white",
-                padding: 15,
-                borderRadius: 10,
-                boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-                maxHeight: "40vh",
-                overflowY: "auto",
-              }}
-            >
-              <h3>📋 Survey List</h3>
-              {surveyData.map((point, i) => (
-                <div
-                  key={i}
-                  onClick={() => {
-                    showDetails(point);
-                    setActiveSurveyIndex(i);
-                    mapRef.current.setView([point.lat, point.lng], 12);
-                  }}
-                  style={{
-                    padding: "8px 10px",
-                    marginBottom: 5,
-                    borderRadius: 6,
-                    background:
-                      activeSurveyIndex === i ? "#e0f2fe" : "transparent",
-                    cursor: "pointer",
-                  }}
-                >
-                  <b>{point.title}</b>
-                  <div style={{ fontSize: "0.9rem", color: "#555" }}>{point.location}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Details */}
-            <div
-              style={{
-                background: "white",
-                padding: 15,
-                borderRadius: 10,
-                boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-                flex: 1,
-              }}
-            >
-              <h3>📄 Details</h3>
-              <div dangerouslySetInnerHTML={{ __html: detailHtml }} />
-            </div>
-          </div>
-        </section>
+      {/* Full-width Map */}
+      <div className="flex-1 bg-white rounded-xl shadow-md mx-8 mb-8 p-4">
+        <h2 className="text-xl font-semibold mb-2">🗺️ Survey Locations</h2>
+        <div id="map" className="h-[80vh] w-full rounded-lg"></div>
       </div>
 
       {/* Footer */}
-      <footer
-        style={{
-          textAlign: "center",
-          padding: "15px",
-          background: "#f1f5f9",
-          color: "#555",
-          marginTop: 30,
-          fontSize: "0.9rem",
-        }}
-      >
-        © {new Date().getFullYear()} Survey Analytics — All rights reserved.
+      <footer className="text-center py-4 bg-gray-100 text-gray-600 text-sm mt-auto">
+        © {new Date().getFullYear()} <b>Survey Analytics</b> — All rights reserved.
       </footer>
     </div>
   );
