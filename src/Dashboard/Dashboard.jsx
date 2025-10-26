@@ -31,11 +31,20 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
+      // Optional: Call your backend logout endpoint
       await axios.post("https://your-api-endpoint.com/logout");
+
+      // ✅ Remove stored user data from localStorage
       localStorage.removeItem("fullname");
+      localStorage.removeItem("token"); // (if you store a token, remove it too)
+
+      // ✅ Redirect back to login page
       navigate("/login");
     } catch (error) {
       console.error("Error logging out:", error);
+
+      // Even if error occurs, force redirect to login for safety
+      navigate("/login");
     }
   };
 
@@ -100,3 +109,4 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
+
