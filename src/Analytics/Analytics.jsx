@@ -20,6 +20,8 @@ function Analytics() {
   const mapRef = useRef(null);
   const markersRef = useRef(null);
   const [surveyData, setSurveyData] = useState([]);
+  const [selectedSurvey, setSelectedSurvey] = useState(null);
+  const listRefs = useRef([]);
 
   const API_URL = "http://localhost:5000/api/markers";
 
@@ -65,22 +67,15 @@ function Analytics() {
   function renderMarkers(data) {
     markersRef.current.clearLayers();
 
-    data.forEach((point) => {
+    data.forEach((point, index) => {
       const marker = L.marker([point.lat, point.lng]);
 
-      // ✅ Simple popup (no hover or button)
-      marker.bindPopup(`
-        <div style="min-width:220px; line-height:1.4;">
-          <b>${point.title || "Untitled Survey"}</b><br/>
-          📍 <b>Location:</b> ${point.location || "Unknown"}<br/>
-          👤 <b>Respondent:</b> ${point.respondent || "N/A"}<br/>
-          📅 <b>Date:</b> ${point.date || "N/A"}<br/>
-          📝 <b>Notes:</b> ${point.notes || "None"}<br/>
-          🌐 (${point.lat.toFixed(4)}, ${point.lng.toFixed(4)})
-        </div>
-      `);
+      // ✅ Clicking a marker highlights the list title
+      marker.on("click", () => {
+        setSelectedSurvey(index);
+        listRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
 
-      // ❌ Removed hover and click events
       markersRef.current.addLayer(marker);
     });
   }
@@ -187,13 +182,36 @@ function Analytics() {
           </div>
         </section>
 
-        {/* Map Section (fullscreen fitting, no overflow) */}
-        <section className="bg-white rounded-2xl shadow-lg p-6 w-full overflow-hidden">
+        {/* Map Section */}
+        <section className="bg-white rounded-2xl shadow-lg p-6 w-full overflow-hidden mb-6">
           <h2 className="text-2xl font-semibold mb-4">🗺️ Survey Locations</h2>
           <div
             id="map"
             className="w-full h-[calc(100vh-260px)] sm:h-[calc(100vh-250px)] lg:h-[calc(100vh-240px)] rounded-xl border border-gray-200 overflow-hidden"
           ></div>
+        </section>
+
+        {/* ✅ Survey List Section (title only) */}
+        <section className="bg-white rounded-2xl shadow-lg p-6 w-full">
+          <h2 className="text-2xl font-semibold mb-4">📋 Survey Titles</h2>
+          <div className="max-h-[50vh] overflow-y-auto space-y-3">
+            {surveyData.map((survey, index) => (
+              <div
+                key={index}
+                ref={(el) => (listRefs.current[index] = el)}
+                onClick={() => window.open(`/survey/${survey._id || index}`, "_blank")}
+                className={`p-4 rounded-lg border transition-all duration-300 cursor-pointer ${
+                  selectedSurvey === index
+                    ? "bg-blue-100 border-blue-500 shadow-md"
+                    : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                }`}
+              >
+                <p className="font-semibold text-lg text-blue-600 underline">
+                  {survey.title || `Survey ${index + 1}`}
+                </p>
+              </div>
+            ))}
+          </div>
         </section>
       </main>
 
