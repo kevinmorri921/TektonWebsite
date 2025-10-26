@@ -7,7 +7,7 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
 
-// ✅ Fix missing marker icons (for Vite)
+// ✅ Fix missing marker icons for Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).href,
@@ -21,11 +21,11 @@ function Analytics() {
   const markersRef = useRef(null);
   const [surveyData, setSurveyData] = useState([]);
   const [selectedSurvey, setSelectedSurvey] = useState(null);
+  const [mapView, setMapView] = useState("satellite"); // 🛰️ Default view
   const listRefs = useRef([]);
-
   const API_URL = "http://localhost:5000/api/markers";
 
-  // ✅ Fetch markers
+  // ✅ Fetch markers from backend
   useEffect(() => {
     fetchMarkers();
   }, []);
@@ -44,21 +44,49 @@ function Analytics() {
   useEffect(() => {
     if (mapRef.current) return;
 
-    mapRef.current = L.map("map", {
-      center: [12.8797, 121.774],
+    const map = L.map("map", {
+      center: [14.5995, 120.9842], // Manila
       zoom: 6,
+      zoomControl: true,
     });
 
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> | <a href="https://carto.com/">CARTO</a>',
-    }).addTo(mapRef.current);
+    const baseLayers = {
+      normal: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap contributors",
+      }),
+      satellite: L.tileLayer(
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        {
+          maxZoom: 19,
+          attribution:
+            '&copy; <a href="https://www.esri.com/">Esri</a>, &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a>',
+        }
+      ),
+    };
+
+    // 🛰️ Default to satellite view
+    baseLayers[mapView].addTo(map);
+    mapRef.current = map;
+    mapRef.current.baseLayers = baseLayers;
 
     markersRef.current = L.markerClusterGroup();
-    mapRef.current.addLayer(markersRef.current);
+    map.addLayer(markersRef.current);
+
+    const resizeObserver = new ResizeObserver(() => map.invalidateSize());
+    resizeObserver.observe(document.getElementById("map"));
+    return () => resizeObserver.disconnect();
   }, []);
 
-  // ✅ Render markers when surveyData changes
+  // ✅ Switch Map View
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const { baseLayers } = mapRef.current;
+    Object.values(baseLayers).forEach((layer) => mapRef.current.removeLayer(layer));
+    baseLayers[mapView].addTo(mapRef.current);
+  }, [mapView]);
+
+  // ✅ Render markers
   useEffect(() => {
     if (!markersRef.current) return;
     renderMarkers(surveyData);
@@ -69,18 +97,15 @@ function Analytics() {
 
     data.forEach((point, index) => {
       const marker = L.marker([point.lat, point.lng]);
-
-      // ✅ Clicking a marker highlights the list title
       marker.on("click", () => {
         setSelectedSurvey(index);
         listRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" });
       });
-
       markersRef.current.addLayer(marker);
     });
   }
 
-  // ✅ Handle file upload
+  // ✅ Handle file upload (.json or .txt)
   async function handleFileUpload(e) {
     const files = e.target.files;
     if (!files?.length) return;
@@ -145,7 +170,7 @@ function Analytics() {
     }
   }
 
-  // ✅ Full-width responsive layout
+  // ✅ Layout
   return (
     <div className="font-inter bg-gray-50 min-h-screen w-screen flex flex-col overflow-x-hidden">
       {/* 🔹 Navbar */}
@@ -161,7 +186,7 @@ function Analytics() {
         </button>
       </nav>
 
-      {/* 🔹 Page Content */}
+      {/* 🔹 Main Content */}
       <main className="flex-1 w-full pt-[90px] px-4 sm:px-8 lg:px-16 pb-10">
         {/* Upload Section */}
         <section className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 w-full mb-6">
@@ -183,15 +208,24 @@ function Analytics() {
         </section>
 
         {/* Map Section */}
-        <section className="bg-white rounded-2xl shadow-lg p-6 w-full overflow-hidden mb-6">
-          <h2 className="text-2xl font-semibold mb-4">🗺️ Survey Locations</h2>
+        <section className="bg-white rounded-2xl shadow-lg p-6 w-full overflow-hidden mb-6 relative">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold">🗺️ Survey Locations</h2>
+            <button
+              onClick={() => setMapView((v) => (v === "satellite" ? "normal" : "satellite"))}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+            >
+              Switch to {mapView === "satellite" ? "🗺️ Normal View" : "🛰️ Satellite View"}
+            </button>
+          </div>
+
           <div
             id="map"
             className="w-full h-[calc(100vh-260px)] sm:h-[calc(100vh-250px)] lg:h-[calc(100vh-240px)] rounded-xl border border-gray-200 overflow-hidden"
           ></div>
         </section>
 
-        {/* ✅ Survey List Section (title only) */}
+        {/* Survey List */}
         <section className="bg-white rounded-2xl shadow-lg p-6 w-full">
           <h2 className="text-2xl font-semibold mb-4">📋 Survey Titles</h2>
           <div className="max-h-[50vh] overflow-y-auto space-y-3">
