@@ -1,7 +1,8 @@
-// src/Dashboard/Dashboard.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import bgImage from "../assets/db-pic.jpg";
+import { Home, BarChart3, Settings, User, LogOut } from "lucide-react"; // ✅ Import icons
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -15,7 +16,6 @@ const Dashboard = () => {
         if (storedName) {
           setFullname(storedName);
         } else {
-          // Example API call if no local data
           const response = await axios.get("https://your-api-endpoint.com/user");
           setFullname(response.data.fullname || "User");
         }
@@ -31,78 +31,103 @@ const Dashboard = () => {
 
   const handleLogout = async () => {
     try {
-      // Optional: Call your backend logout endpoint
       await axios.post("https://your-api-endpoint.com/logout");
-
-      // ✅ Remove stored user data from localStorage
       localStorage.removeItem("fullname");
-      localStorage.removeItem("token"); // (if you store a token, remove it too)
-
-      // ✅ Redirect back to login page
+      localStorage.removeItem("token");
       navigate("/login");
     } catch (error) {
       console.error("Error logging out:", error);
-
-      // Even if error occurs, force redirect to login for safety
       navigate("/login");
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-700 to-blue-500 flex items-center justify-center">
+      <div className="h-screen w-screen flex items-center justify-center bg-[#1E1E2A]">
         <p className="text-white text-lg">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-700 to-blue-500 text-white">
-      <header className="flex justify-between items-center px-8 py-4 bg-blue-900 shadow-lg">
-        <h1 className="text-2xl font-bold tracking-wide">Tekton Geometrix</h1>
-        <button
-          onClick={handleLogout}
-          className="bg-red-500 hover:bg-red-600 px-4 py-2 rounded-lg font-semibold text-white transition-colors"
-        >
-          Logout
-        </button>
-      </header>
+    <div
+      className="h-screen w-screen flex items-center justify-center overflow-hidden transition-all duration-1000"
+      style={{
+        backgroundImage: `url(${bgImage})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      {/* Main Dashboard Container */}
+      <div className="flex w-[90%] max-w-[1200px] h-[85vh] bg-[#f8f9fa]/90 backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-700">
+        {/* Sidebar */}
+        <aside className="w-[250px] bg-[#f8f9fa]/90 flex flex-col justify-between py-6 px-6 border-r border-gray-300">
+          <div>
+            <h1 className="text-lg font-semibold mb-6 text-gray-800">
+              Hi, <span className="italic font-serif">{fullname}</span>
+            </h1>
 
-      <div className="flex flex-col items-center justify-center py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-4xl font-bold mb-2">
-            Welcome, {fullname} 🎉
+            <nav className="space-y-3">
+              <button
+                onClick={() => navigate("/dashboard")}
+                className="flex items-center gap-3 bg-[#B9BEE1] hover:bg-[#A9AED1] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
+              >
+                <Home size={18} /> Dashboard
+              </button>
+
+              <button
+                onClick={() => navigate("/analytics")}
+                className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
+              >
+                <BarChart3 size={18} /> Analytics
+              </button>
+
+              <button
+                onClick={() => navigate("/settings")}
+                className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
+              >
+                <Settings size={18} /> Settings
+              </button>
+            </nav>
+          </div>
+
+          <div className="border-t border-gray-300 pt-4 space-y-3">
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
+            >
+              <User size={18} /> Profile
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
+            >
+              <LogOut size={18} /> Log Out
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 bg-[#ffffff]/90 p-10 rounded-r-[2rem] flex flex-col">
+          <h2 className="text-2xl font-extrabold mb-2 text-[#14142B]">
+            WELCOME TO TEKTON GEOMETRIX INC
           </h2>
-          <p className="text-lg text-blue-100">
-            Here’s a quick overview of your account.
+          <p className="text-sm mb-6 text-gray-700">
+            Welcome Back! Here’s a quick look at your account activity.
           </p>
-        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-[90%] max-w-5xl">
-          <div
-            onClick={() => navigate("/analytics")}
-            className="cursor-pointer bg-white text-blue-800 p-8 rounded-2xl shadow-lg hover:scale-105 transform transition-all"
-          >
-            <h3 className="text-2xl font-bold mb-2">📊 Analytics</h3>
-            <p>View your latest reports and statistics.</p>
-          </div>
+          <div className="bg-[#B9BEE1] rounded-2xl flex-1 mb-8"></div>
 
-          <div
-            onClick={() => navigate("/profile")}
-            className="cursor-pointer bg-white text-blue-800 p-8 rounded-2xl shadow-lg hover:scale-105 transform transition-all"
-          >
-            <h3 className="text-2xl font-bold mb-2">👤 Profile</h3>
-            <p>Manage your account settings and personal info.</p>
+          <div className="flex justify-end">
+            <input
+              type="text"
+              placeholder="Search"
+              className="w-60 px-4 py-2 rounded-lg bg-[#C5CAE9] text-[#1F1F30] placeholder-gray-700 focus:outline-none"
+            />
           </div>
-
-          <div
-            onClick={() => navigate("/settings")}
-            className="cursor-pointer bg-white text-blue-800 p-8 rounded-2xl shadow-lg hover:scale-105 transform transition-all"
-          >
-            <h3 className="text-2xl font-bold mb-2">⚙️ Settings</h3>
-            <p>Customize your preferences and security.</p>
-          </div>
-        </div>
+        </main>
       </div>
     </div>
   );
@@ -110,3 +135,7 @@ const Dashboard = () => {
 
 export default Dashboard;
 
+
+
+
+//ICONS-GOODS

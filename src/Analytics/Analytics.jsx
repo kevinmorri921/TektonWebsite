@@ -190,8 +190,8 @@ function Analytics() {
       <main className="flex-1 w-full pt-[90px] px-4 sm:px-8 lg:px-16 pb-10">
         {/* Upload Section */}
         <section className="bg-white rounded-2xl shadow-lg p-6 sm:p-8 w-full mb-6">
-          <h2 className="text-2xl font-semibold mb-4">📂 Upload Coordinates File</h2>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <h2 className="text-blue-600 text-2xl font-semibold mb-4">📂 Upload Coordinates File</h2>
+          <div className="text-blue-600 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <input
               type="file"
               accept=".txt,.json"
@@ -199,7 +199,7 @@ function Analytics() {
               onChange={handleFileUpload}
               className="mt-2 mb-3 sm:mb-0 w-full sm:w-auto"
             />
-            <p className="text-gray-600 text-sm sm:text-base">
+            <p className="text-blue-600 text-sm sm:text-base">
               Supported formats:
               <br /> • <b>.txt</b>: latitude,longitude per line
               <br /> • <b>.json</b>: array of objects with <code>lat</code> and <code>lng</code>
