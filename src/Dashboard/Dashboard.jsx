@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import bgImage from "../assets/db-pic.jpg";
-import { Home, BarChart3, Settings, User, LogOut } from "lucide-react"; // ✅ Import icons
+import { Home, BarChart3, Settings, User, LogOut } from "lucide-react";
+import { motion } from "framer-motion";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -51,91 +52,79 @@ const Dashboard = () => {
 
   return (
     <div
-      className="h-screen w-screen flex items-center justify-center overflow-hidden transition-all duration-1000"
-      style={{
-        backgroundImage: `url(${bgImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-      }}
-    >
-      {/* Main Dashboard Container */}
-      <div className="flex w-[90%] max-w-[1200px] h-[85vh] bg-[#f8f9fa]/90 backdrop-blur-md rounded-[2rem] shadow-2xl overflow-hidden transition-all duration-700">
-        {/* Sidebar */}
-        <aside className="w-[250px] bg-[#f8f9fa]/90 flex flex-col justify-between py-6 px-6 border-r border-gray-300">
-          <div>
-            <h1 className="text-lg font-semibold mb-6 text-gray-800">
-              Hi, <span className="italic font-serif">{fullname}</span>
-            </h1>
+      className="h-screen w-screen flex items-center justify-center overflow-hidden" style={{ backgroundImage: `url(${bgImage})`, backgroundSize: "cover", backgroundPosition: "center", backgroundRepeat: "no-repeat", }} >
+      {/* Main Container */}
+      <motion.div initial={{ opacity: 0, scale: 0.95 }}animate={{ opacity: 1, scale: 1 }}transition={{ duration: 0.5 }}className="flex w-[90%] max-w-[1200px] h-[85vh] bg-[#F8F9FA] rounded-[2rem] shadow-2xl overflow-hidden">
+        {/* Sidebar + Vertical Divider */}
+        <motion.div initial={{ x: -100, opacity: 0 }} animate={{ x: 0, opacity: 1 }}transition={{ duration: 0.6, ease: "easeOut" }}className="relative flex">
+          {/* Sidebar */}
+          <aside className="w-[250px] bg-[#F8F9FA] flex flex-col py-6 px-6 rounded-l-[2rem]">
+            <div>
+              <p className="text-xl font-semibold italic text-center text-gray-800 mb-8 mt-6">Hi, <span className="font-bold">{fullname}</span>! </p>
 
-            <nav className="space-y-3">
-              <button
-                onClick={() => navigate("/dashboard")}
-                className="flex items-center gap-3 bg-[#B9BEE1] hover:bg-[#A9AED1] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
-              >
-                <Home size={18} /> Dashboard
-              </button>
+              <nav className="space-y-5">
+                <motion.button whileHover={{ scale: 1.05 }}  onClick={() => navigate("/dashboard")}  className="flex items-center gap-3 bg-[#303345] px-4 py-2 w-full rounded-xl text-left font-medium text-[#F8F9FA]">
+                  <Home size={18} /> Dashboard
+                </motion.button>
+                <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/analytics")}  className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition" >
+                  <BarChart3 size={18} className="text-[#303345]" /> Analytics
+                </motion.button>
+                <motion.button  whileHover={{ scale: 1.05 }}  onClick={() => navigate("/settings")}  className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"   >
+                  <Settings size={18} className="text-[#303345]" /> Settings
+                </motion.button>
+              </nav>
+            </div>
 
-              <button
-                onClick={() => navigate("/analytics")}
-                className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
-              >
-                <BarChart3 size={18} /> Analytics
-              </button>
+            {/* Profile + Logout */}
+            <div className="space-y-4 mt-auto mb-6">
+              <motion.button whileHover={{ scale: 1.05 }}  onClick={() => navigate("/profile")}   className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"  >
+                <User size={18} className="text-[#303345]" /> Profile
+              </motion.button>
+              <div className="border-t border-gray-300" />
+              <motion.button  whileHover={{ scale: 1.05 }}  onClick={handleLogout}  className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition" >
+                <LogOut size={18} className="text-[#303345]" /> Log Out
+              </motion.button>
+            </div>
+          </aside>
 
-              <button
-                onClick={() => navigate("/settings")}
-                className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
-              >
-                <Settings size={18} /> Settings
-              </button>
-            </nav>
-          </div>
-
-          <div className="border-t border-gray-300 pt-4 space-y-3">
-            <button
-              onClick={() => navigate("/profile")}
-              className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
-            >
-              <User size={18} /> Profile
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 bg-[#E3E4F1] hover:bg-[#D7D8EA] transition-colors px-4 py-2 w-full rounded-xl text-left font-medium"
-            >
-              <LogOut size={18} /> Log Out
-            </button>
-          </div>
-        </aside>
+          {/* Floating Vertical Line */}
+          <div className="w-[1px] bg-gray-300 my-8"></div>
+        </motion.div>
 
         {/* Main Content */}
-        <main className="flex-1 bg-[#ffffff]/90 p-10 rounded-r-[2rem] flex flex-col">
-          <h2 className="text-2xl font-extrabold mb-2 text-[#14142B]">
-            WELCOME TO TEKTON GEOMETRIX INC
-          </h2>
-          <p className="text-sm mb-6 text-gray-700">
-            Welcome Back! Here’s a quick look at your account activity.
-          </p>
+        <motion.main  initial={{ x: 50, opacity: 0 }}  animate={{ x: 0, opacity: 1 }}  transition={{ duration: 0.6, ease: "easeOut" }} className="flex-1 p-10 flex flex-col bg-[#F8F9FA] rounded-r-[2rem]"  >
+          <h2 className="text-2xl font-extrabold text-[#14142B] mb-2"> WELCOME TO TEKTON GEOMETRIX INC</h2>
+          <p className="text-sm text-gray-700 mb-6">Welcome Back! Here’s a quick look at your account activity.</p>
 
-          <div className="bg-[#B9BEE1] rounded-2xl flex-1 mb-8"></div>
+          {/* CALENDAR + TASKS */}
+          <div className="flex gap-6 mb-6">
+            <motion.div initial={{ y: 20, opacity: 0 }}  animate={{ y: 0, opacity: 1 }}  transition={{ delay: 0.2 }} className="flex-1 bg-white rounded-2xl shadow-md p-6" >
+              <h3 className="text-lg font-semibold mb-4 text-[#303345]">Calendar</h3>
+              <p className="text-gray-600">Calendar here...</p>
+            </motion.div>
 
-          <div className="flex justify-end">
-            <input
-              type="text"
-              placeholder="Search"
-              className="w-60 px-4 py-2 rounded-lg bg-[#C5CAE9] text-[#1F1F30] placeholder-gray-700 focus:outline-none"
-            />
+            <motion.div  initial={{ y: 20, opacity: 0 }}  animate={{ y: 0, opacity: 1 }}  transition={{ delay: 0.4 }}  className="flex-1 bg-white rounded-2xl shadow-md p-6" >
+              <h3 className="text-lg font-semibold mb-4 text-[#303345]">TO DOs</h3>
+              <p className="text-gray-600">Reminders here...</p>
+            </motion.div>
           </div>
-        </main>
-      </div>
+
+          {/* OTHER FEATURE */}
+          <motion.div  initial={{ y: 20, opacity: 0 }}  animate={{ y: 0, opacity: 1 }}  transition={{ delay: 0.6 }} className="bg-white rounded-2xl shadow-md p-6 mb-6" >
+            <h3 className="text-lg font-semibold mb-4 text-[#303345]">  ADD OTHER FEATURES Here </h3>
+            <p className="text-red-600">  Additional content like notes, upcoming events, or announcements can go here. </p>
+          </motion.div>
+
+          {/* Search bar */}
+          <motion.div  initial={{ y: 20, opacity: 0 }}  animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8 }}  className="flex justify-end mt-auto"  >
+            <input type="text"  placeholder="Search" className="w-40 px-4 py-2 rounded-lg bg-[#C5CAE9] text-[#1F1F30] placeholder-gray-700 focus:outline-none"
+            />
+          </motion.div>
+        </motion.main>
+      </motion.div>
     </div>
   );
 };
 
 export default Dashboard;
-
-
-
-
-//ICONS-GOODS
+//GOODS
