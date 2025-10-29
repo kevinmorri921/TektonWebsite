@@ -11,27 +11,32 @@ const Profile = () => {
   const [fullname, setFullname] = useState("");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [loading, setLoading] = useState({ name: false, password: false, delete: false });
 
   const handleUpdateName = async (e) => {
     e.preventDefault();
     if (!fullname) return setMessage("⚠ Please enter your new name.");
+    
     try {
+      setLoading(prev => ({ ...prev, name: true }));
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "http://localhost:5000/api/update-name",
+        "http://localhost:5000/api/auth/update-profile", // ✅ Corrected endpoint
         { fullname },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (res.data.success) {
         localStorage.setItem("fullname", fullname);
-        setMessage("Name updated successfully.");
+        setMessage("✅ Name updated successfully.");
         setFullname("");
       } else {
-        setMessage(res.data.message || "Error updating name.");
+        setMessage(res.data.message || "❌ Error updating name.");
       }
     } catch (err) {
       console.error(err);
       setMessage("⚠ Server error. Please try again later.");
+    } finally {
+      setLoading(prev => ({ ...prev, name: false }));
     }
   };
 
@@ -39,23 +44,43 @@ const Profile = () => {
     e.preventDefault();
     if (!currentPassword || !newPassword)
       return setMessage("⚠ Please fill in all password fields.");
+    
     try {
+      setLoading(prev => ({ ...prev, password: true }));
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        "http://localhost:5000/api/change-password",
-        { current_password: currentPassword, new_password: newPassword },
+        "http://localhost:5000/api/auth/change-password", // ✅ Corrected endpoint
+        { 
+          currentPassword: currentPassword, // ✅ Correct field name
+          newPassword: newPassword // ✅ Correct field name
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
+      
       if (res.data.success) {
-        setMessage("Password changed successfully.");
+        setMessage("✅ Password changed successfully. Redirecting to login...");
         setCurrentPassword("");
         setNewPassword("");
+        
+        // ✅ Clear localStorage and redirect to login
+        setTimeout(() => {
+          localStorage.removeItem("token");
+          localStorage.removeItem("fullname");
+          localStorage.removeItem("email");
+          navigate("/login");
+        }, 2000);
       } else {
-        setMessage(res.data.message || "Error changing password.");
+        setMessage(res.data.message || "❌ Error changing password.");
       }
     } catch (err) {
-      console.error(err);
-      setMessage("⚠ Server error. Please try again later.");
+      console.error("Password change error:", err);
+      if (err.response?.status === 400) {
+        setMessage("⚠ Current password is incorrect.");
+      } else {
+        setMessage("⚠ Server error. Please try again later.");
+      }
+    } finally {
+      setLoading(prev => ({ ...prev, password: false }));
     }
   };
 
@@ -64,33 +89,33 @@ const Profile = () => {
       "Are you sure you want to delete your account? This cannot be undone!"
     );
     if (!confirmDelete) return;
+    
     try {
+      setLoading(prev => ({ ...prev, delete: true }));
       const token = localStorage.getItem("token");
-      const res = await axios.delete("http://localhost:5000/api/delete-account", {
+      const res = await axios.delete("http://localhost:5000/api/auth/delete-account", { // ✅ Corrected endpoint
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.data.success) {
         localStorage.clear();
-        navigate("/signup");
+        setMessage("✅ Account deleted successfully. Redirecting...");
+        setTimeout(() => navigate("/signup"), 1500);
       } else {
-        setMessage(res.data.message || "Error deleting account.");
+        setMessage(res.data.message || "❌ Error deleting account.");
       }
     } catch (err) {
       console.error(err);
       setMessage("⚠ Server error. Please try again later.");
+    } finally {
+      setLoading(prev => ({ ...prev, delete: false }));
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await axios.post("https://your-api-endpoint.com/logout");
-      localStorage.removeItem("fullname");
-      localStorage.removeItem("token");
-      navigate("/login");
-    } catch (error) {
-      console.error("Error logging out:", error);
-      navigate("/login");
-    }
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("fullname");
+    localStorage.removeItem("email");
+    navigate("/login");
   };
 
   const storedName = localStorage.getItem("fullname") || "User";
@@ -147,7 +172,20 @@ const Profile = () => {
           <h2 className="text-2xl font-extrabold text-[#14142B] mb-2">PROFILE SETTINGS</h2>
           <p className="text-sm text-gray-700 mb-6">Manage your personal information and account security below.</p>
 
-          {message && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="bg-blue-100 text-blue-800 p-3 rounded-md mb-6 w-full max-w-md">{message}</motion.div>}
+          {message && (
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              transition={{ delay: 0.2 }} 
+              className={`p-3 rounded-md mb-6 w-full max-w-md ${
+                message.includes("✅") ? "bg-green-100 text-green-800" : 
+                message.includes("⚠") ? "bg-yellow-100 text-yellow-800" : 
+                "bg-red-100 text-red-800"
+              }`}
+            >
+              {message}
+            </motion.div>
+          )}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-4xl">
             {/* UPDATE NAME */}
@@ -156,8 +194,21 @@ const Profile = () => {
                 <Pencil size={18} /> Update Name
               </h3>
               <form onSubmit={handleUpdateName} className="flex flex-col flex-1 justify-between">
-                <input type="text" placeholder="New full name" value={fullname} onChange={(e) => setFullname(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg text-gray-800 placeholder-gray-500 mb-4" />
-                <motion.button whileHover={{ scale: 1.05 }} type="submit" className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90"> Update </motion.button>
+                <input 
+                  type="text" 
+                  placeholder="New full name" 
+                  value={fullname} 
+                  onChange={(e) => setFullname(e.target.value)} 
+                  className="w-full border border-gray-300 p-3 rounded-lg text-gray-800 placeholder-gray-500 mb-4" 
+                />
+                <motion.button 
+                  whileHover={{ scale: 1.05 }} 
+                  type="submit" 
+                  disabled={loading.name || !fullname.trim()}
+                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-50"
+                >
+                  {loading.name ? "Updating..." : "Update"}
+                </motion.button>
               </form>
             </motion.div>
 
@@ -165,16 +216,48 @@ const Profile = () => {
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }} className="bg-white p-6 rounded-2xl shadow-md border border-gray-200 flex flex-col">
               <h3 className="text-lg font-semibold mb-4 text-[#303345] flex items-center gap-2"> <Key size={18} /> Change Password </h3>
               <form onSubmit={handleChangePassword} className="flex flex-col flex-1 justify-between">
-                <input type="password" placeholder="Current password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg text-gray-800 placeholder-gray-500 mb-4" />
-                <input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full border border-gray-300 p-3 rounded-lg text-gray-800 placeholder-gray-500 mb-4"/>
-                <motion.button whileHover={{ scale: 1.05 }} type="submit" className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90"> Change Password </motion.button>
+                <input 
+                  type="password" 
+                  placeholder="Current password" 
+                  value={currentPassword} 
+                  onChange={(e) => setCurrentPassword(e.target.value)} 
+                  className="w-full border border-gray-300 p-3 rounded-lg text-gray-800 placeholder-gray-500 mb-4" 
+                />
+                <input 
+                  type="password" 
+                  placeholder="New password" 
+                  value={newPassword} 
+                  onChange={(e) => setNewPassword(e.target.value)} 
+                  className="w-full border border-gray-300 p-3 rounded-lg text-gray-800 placeholder-gray-500 mb-4"
+                />
+                <motion.button 
+                  whileHover={{ scale: 1.05 }} 
+                  type="submit" 
+                  disabled={loading.password || !currentPassword || !newPassword}
+                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-50"
+                >
+                  {loading.password ? "Changing..." : "Change Password"}
+                </motion.button>
               </form>
+              <p className="text-xs text-gray-500 mt-2">
+                You will be logged out after changing your password.
+              </p>
             </motion.div>
 
             {/* DELETE ACCOUNT */}
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }} className="bg-white p-6 rounded-2xl shadow-md border border-gray-200">
               <h3 className="text-lg font-semibold mb-4 text-red-600 flex items-center gap-2"> <AlertTriangle size={18} /> Delete Account </h3>
-              <motion.button whileHover={{ scale: 1.05 }} onClick={handleDeleteAccount} className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2"> <Trash2 size={18} /> Delete Account</motion.button>
+              <motion.button 
+                whileHover={{ scale: 1.05 }} 
+                onClick={handleDeleteAccount} 
+                disabled={loading.delete}
+                className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-50"
+              > 
+                {loading.delete ? "Deleting..." : <><Trash2 size={18} /> Delete Account</>}
+              </motion.button>
+              <p className="text-xs text-gray-500 mt-2">
+                This action cannot be undone. All your data will be permanently deleted.
+              </p>
             </motion.div>
           </div>
         </motion.main>
@@ -184,4 +267,3 @@ const Profile = () => {
 };
 
 export default Profile;
-//GOODS
