@@ -24,6 +24,20 @@ router.post("/", async (req, res) => {
   }
 });
 
+// ✅ PUT update marker by ID
+router.put("/:id", async (req, res) => {
+  try {
+    const updatedMarker = await Marker.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true } // return the updated marker
+    );
+    res.json(updatedMarker);
+  } catch (error) {
+    res.status(400).json({ message: "Error updating marker", error });
+  }
+});
+
 // ✅ DELETE marker by ID
 router.delete("/:id", async (req, res) => {
   try {

@@ -116,7 +116,6 @@ function Analytics() {
         const pt = mapRef.current.latLngToContainerPoint(e.latlng);
         updatePopupPositionFromPoint(pt);
         setSelectedSurvey(index);
-        // Only show survey list, not details automatically
         setShowSurveyList(true);
         setShowSurveyDetails(false);
       });
@@ -124,42 +123,58 @@ function Analytics() {
     });
   }
 
+  // ✅ Modified handleFileUpload to allow duplicate coordinates as new entries
   async function handleFileUpload(e) {
-    const files = e.target.files;
-    if (!files?.length) return;
+  const files = e.target.files;
+  if (!files?.length) return;
 
-    const newPoints = [];
-    for (const file of files) {
-      const text = await file.text();
-      const json = JSON.parse(text);
-      for (const item of json) {
-        if (item.lat && item.lng) newPoints.push(item);
+  const newPoints = [];
+  for (const file of files) {
+    const text = await file.text();
+    const json = JSON.parse(text);
+    for (const item of json) {
+      if (item.lat && item.lng) {
+        newPoints.push({ ...item, title: item.title || `Survey ${Date.now()}` });
       }
     }
+  }
 
-    if (!newPoints.length) return;
+  if (!newPoints.length) return;
 
-    const updatedSurveys = [...surveyData];
-    const tolerance = 0.0001;
+  const tolerance = 0.0001;
+  const updatedSurveys = [...surveyData];
 
-    newPoints.forEach((p) => {
+  try {
+    for (const p of newPoints) {
+      // Check if coordinates already exist
       const existingIndex = updatedSurveys.findIndex(
         (s) => Math.abs(s.lat - p.lat) < tolerance && Math.abs(s.lng - p.lng) < tolerance
       );
 
       if (existingIndex !== -1) {
+        // Add as extra survey
         if (!updatedSurveys[existingIndex].extraSurveys) {
           updatedSurveys[existingIndex].extraSurveys = [];
         }
         updatedSurveys[existingIndex].extraSurveys.push(p);
+
+        // Update DB for existing survey
+        await axios.put(`${API_URL}/${updatedSurveys[existingIndex]._id}`, updatedSurveys[existingIndex]);
       } else {
+        // New survey
         updatedSurveys.push(p);
+        await axios.post(API_URL, p);
       }
-    });
+    }
 
     setSurveyData(updatedSurveys);
     alert("Coordinates uploaded!");
+  } catch (err) {
+    console.error(err);
+    alert("Failed to save coordinates!");
   }
+}
+
 
   const handleAddDetails = async (event) => {
     if (selectedSurvey === null) return alert("Select a survey marker first!");
@@ -249,8 +264,7 @@ function Analytics() {
                           className="p-3 rounded-lg border bg-blue-50/80 border-blue-400 shadow-md cursor-pointer hover:bg-blue-100 transition"
                         >
                           <p className="font-semibold text-blue-700 underline">
-                            {surveyData[selectedSurvey].title ||
-                              `Survey ${selectedSurvey + 1}`}
+                            {surveyData[selectedSurvey].title || `Survey ${selectedSurvey + 1}`}
                           </p>
                         </div>
 
