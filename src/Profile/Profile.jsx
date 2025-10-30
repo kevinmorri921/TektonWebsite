@@ -205,7 +205,7 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }} 
                   type="submit" 
                   disabled={loading.name || !fullname.trim()}
-                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-50"
+                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
                 >
                   {loading.name ? "Updating..." : "Update"}
                 </motion.button>
@@ -234,7 +234,7 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }} 
                   type="submit" 
                   disabled={loading.password || !currentPassword || !newPassword}
-                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-50"
+                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
                 >
                   {loading.password ? "Changing..." : "Change Password"}
                 </motion.button>
