@@ -10,6 +10,8 @@ import Analytics from "./Analytics/Analytics";
 import Profile from "./Profile/profile";
 import Delete from "./Delete/delete";
 import Settings from "./Settings/settings";
+import AdminPanel from "./AdminPanel/AdminPanel";
+import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
 
 
 function App() {
@@ -27,6 +29,13 @@ function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/delete" element={<Delete />} />
         <Route path="/settings" element={<Settings />} />
+        
+        {/* Admin route */}
+        <Route path="/admin" element={
+          <ProtectedAdminRoute>
+            <AdminPanel />
+          </ProtectedAdminRoute>
+        } />
 
         {/* 404 fallback */}
         <Route path="*" element={<h1 className="text-center mt-10 text-red-600">404 - Page Not Found</h1>} />
