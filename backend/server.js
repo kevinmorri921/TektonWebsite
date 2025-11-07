@@ -1,15 +1,16 @@
 import express from "express";
 import cors from "cors";
-import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
 
 import authRoutes from "./routes/auth.js";
 import loginRoute from "./routes/login.js";
 import markerRoutes from "./routes/markerRoutes.js";
-import changePasswordRoute from "./routes/change-password.js"; // ✅ Add this import
+import changePasswordRoute from "./routes/change-password.js";
 import updateProfileRoute from "./routes/update-profile.js";
 import deleteAccountRoute from "./routes/delete-account.js";
+import eventRoutes from "./routes/eventRoutes.js";
+
 // Load environment variables
 dotenv.config();
 
@@ -27,15 +28,18 @@ app.use(
     credentials: true,
   })
 );
-app.use(bodyParser.json());
+app.use(express.json({ limit: "10mb" })); // ✅ replaces bodyParser
+app.use(express.urlencoded({ extended: true }));
 
 // 🛣 API Routes
 app.use("/api", authRoutes);
 app.use("/api/login", loginRoute);
 app.use("/api/markers", markerRoutes);
-app.use("/api/auth/change-password", changePasswordRoute); // ✅ Add this line
+app.use("/api/auth/change-password", changePasswordRoute);
 app.use("/api/auth/update-profile", updateProfileRoute);
 app.use("/api/auth/delete-account", deleteAccountRoute);
+app.use("/api/events", eventRoutes);
+
 // 🧾 Root route (for testing)
 app.get("/", (req, res) => {
   res.send("✅ Backend is running successfully with MongoDB & Marker API!");

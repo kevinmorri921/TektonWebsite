@@ -13,12 +13,41 @@ router.get("/", async (req, res) => {
   }
 });
 
+// ✅ GET single marker by ID
+router.get("/:id", async (req, res) => {
+  try {
+    const marker = await Marker.findById(req.params.id);
+    if (!marker) {
+      return res.status(404).json({ message: "Marker not found" });
+    }
+    res.json(marker);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching marker details", error });
+  }
+});
+
 // ✅ POST add new marker
 router.post("/", async (req, res) => {
   try {
-    const newMarker = new Marker(req.body);
-    const savedMarker = await newMarker.save();
-    res.status(201).json(savedMarker);
+    const { latitude, longitude, ...survey } = req.body;
+
+    let marker = await Marker.findOne({ latitude, longitude });
+
+    if (marker) {
+      // ✅ Same location: push new survey to existing marker
+      marker.surveys.push(survey);
+      await marker.save();
+      res.status(200).json(marker);
+    } else {
+      // ✅ New location: create new marker
+      const newMarker = new Marker({
+        latitude,
+        longitude,
+        surveys: [survey],
+      });
+      const savedMarker = await newMarker.save();
+      res.status(201).json(savedMarker);
+    }
   } catch (error) {
     res.status(400).json({ message: "Error saving marker", error });
   }
@@ -30,7 +59,7 @@ router.put("/:id", async (req, res) => {
     const updatedMarker = await Marker.findByIdAndUpdate(
       req.params.id,
       req.body,
-      { new: true, runValidators: true } // return the updated marker
+      { new: true, runValidators: true }
     );
     res.json(updatedMarker);
   } catch (error) {

@@ -1,21 +1,33 @@
 import mongoose from "mongoose";
 
-const surveySchema = new mongoose.Schema(
+const surveyValueSchema = new mongoose.Schema(
   {
-    title: { type: String, required: true },
-    location: { type: String, default: "Unknown" },
-    respondent: { type: String, default: "N/A" },
-    date: { type: String, default: new Date().toISOString().split("T")[0] },
-    notes: { type: String, default: "" },
+    from: Number,
+    to: Number,
+    sign: String,
+    number: Number,
   },
-  { _id: false } // no new _id for each survey
+  { _id: false }
+);
+
+const surveyDetailSchema = new mongoose.Schema(
+  {
+    name: { type: String, required: true },
+    createdAt: { type: Date, default: Date.now },
+    radioOne: String,
+    radioTwo: String,
+    lineLength: String,
+    lineIncrement: String,
+    surveyValues: [surveyValueSchema],
+  },
+  { _id: false }
 );
 
 const markerSchema = new mongoose.Schema(
   {
-    lat: { type: Number, required: true },
-    lng: { type: Number, required: true },
-    surveys: [surveySchema], // all surveys for this coordinate
+    latitude: { type: Number, required: true },
+    longitude: { type: Number, required: true },
+    surveys: [surveyDetailSchema], // ✅ multiple surveys in one location
   },
   { timestamps: true }
 );
