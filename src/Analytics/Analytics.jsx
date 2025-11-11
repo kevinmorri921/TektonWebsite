@@ -343,7 +343,7 @@ function Analytics() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="bg-white/95 backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[520px] relative">
+      <div className="bg-white/95 backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[800px] h-[500px] relative">
         <button
           onClick={() => setShowSurveyDetails(false)}
           className="absolute top-3 right-3 text-gray-600 hover:text-red-600 p-2 rounded"
@@ -368,10 +368,15 @@ function Analytics() {
               <FilePlus2 className="w-3.5 h-3.5" /> Export
             </button>
 
-            <button
+               <button
               onClick={() => {
                 try {
-                  navigator.clipboard?.writeText(JSON.stringify(selectedDetails));
+                  const exportObj = {
+                    ...selectedDetails,
+                    latitude: selectedMarker?.latitude ?? selectedMarker?.lat ?? null,
+                    longitude: selectedMarker?.longitude ?? selectedMarker?.lng ?? null,
+                  };
+                  navigator.clipboard?.writeText(JSON.stringify(exportObj, null, 2));
                   alert("Copied to clipboard");
                 } catch (err) {
                   console.error(err);
@@ -384,8 +389,8 @@ function Analytics() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mt-4">
-          <div className="space-y-2 text-sm">
+        <div className="grid grid-cols-[1fr_2fr] gap-1 mt-5">
+          <div className="space-y-3 text-sm">
             <div className="flex items-center gap-2 text-[#303345]"><b>Radio 1:</b><span className="text-gray-700">{selectedDetails.radioOne || "N/A"}</span></div>
             <div className="flex items-center gap-2 text-[#303345]"><b>Radio 2:</b><span className="text-gray-700">{selectedDetails.radioTwo || "N/A"}</span></div>
             <div className="flex items-center gap-2 text-[#303345]"><b>Line Length:</b><span className="text-gray-700">{selectedDetails.lineLength || "N/A"}</span></div>
@@ -397,15 +402,15 @@ function Analytics() {
 
           <div>
             {Array.isArray(selectedDetails.surveyValues) && selectedDetails.surveyValues.length > 0 ? (
-              <div className="overflow-auto max-h-[220px] border border-gray-200 rounded-lg">
+              <div className="overflow-auto max-h-[300px] border border-gray-200 rounded-lg">
                 <table className="min-w-full text-sm">
                   <thead className="bg-gray-50 sticky top-0">
                     <tr>
-                      <th className="px-2 py-2 text-left text-[#303345]">#</th>
-                      <th className="px-2 py-2 text-left text-[#303345]">From</th>
-                      <th className="px-2 py-2 text-left text-[#303345]">To</th>
-                      <th className="px-2 py-2 text-left text-[#303345]">Sign</th>
-                      <th className="px-2 py-2 text-left text-[#303345]">Number</th>
+                      <th className="px-2 py-2 text-[#303345]">#</th>
+                      <th className="px-2 py-2 text-[#303345]">From</th>
+                      <th className="px-2 py-2 text-[#303345]">To</th>
+                      <th className="px-2 py-2 text-[#303345]">Sign</th>
+                      <th className="px-2 py-2 text-[#303345]">Number</th>
                     </tr>
                   </thead>
                   <tbody>
