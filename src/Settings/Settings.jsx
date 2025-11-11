@@ -125,7 +125,7 @@ function SettingsPage() {
           <nav className="space-y-5">
             <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/dashboard")} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-[#303345] font-medium"><Home size={18} /> Dashboard</motion.button>
             <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/analytics")} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-[#303345] font-medium"><BarChart3 size={18} /> Analytics</motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/settings")} className="flex items-center gap-3 bg-[#303345] px-4 py-2 w-full rounded-xl text-white font-medium"><Settings size={18} /> Settings</motion.button>
+            {/*<motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/settings")} className="flex items-center gap-3 bg-[#303345] px-4 py-2 w-full rounded-xl text-white font-medium"><Settings size={18} /> Settings</motion.button>*/}
           </nav>
           <div className="space-y-4 mt-auto mb-6">
             <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/profile")} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-[#303345] font-medium"><User size={18} /> Profile</motion.button>

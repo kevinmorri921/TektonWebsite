@@ -163,13 +163,13 @@ const Dashboard = () => {
               </p>
 
               <nav className="space-y-5">
-                <motion.button
+                {/*<motion.button
                   whileHover={{ scale: 1.05 }}
                   onClick={() => navigate("/dashboard")}
                   className="flex items-center gap-3 bg-[#303345] px-4 py-2 w-full rounded-xl text-left font-medium text-[#F8F9FA]"
                 >
                   <Home size={18} /> Dashboard
-                </motion.button>
+                </motion.button>*/}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   onClick={() => navigate("/analytics")}
@@ -270,7 +270,7 @@ const Dashboard = () => {
                     setNewEvent({ ...newEvent, date });
                     setShowModal(true);
                   }}
-                  className="mt-4 bg-[#303345] text-white px-4 py-2 rounded-lg shadow-md font-semibold"
+                  className="mt-4 bg-[#303345] text-black-800 px-4 py-2 rounded-lg shadow-md font-semibold"
                 >
                   + Add Event
                 </button>
@@ -308,7 +308,7 @@ const Dashboard = () => {
                               });
                               setShowModal(true);
                             }}
-                            className="px-2 py-1 bg-yellow-400 text-white rounded-md text-sm"
+                            className="px-2 py-1 bg-yellow-400 text-black-800 rounded-md text-sm"
                           >
                             Edit
                           </button>
@@ -328,7 +328,7 @@ const Dashboard = () => {
                                 }
                               }
                             }}
-                            className="px-2 py-1 bg-red-500 text-white rounded-md text-sm"
+                            className="px-2 py-1 bg-red-500 text-black-800 rounded-md text-sm"
                           >
                             Delete
                           </button>
@@ -345,15 +345,18 @@ const Dashboard = () => {
               </div>
 
               {/* Add/Edit Event Modal */}
+              {/* Add/Edit Event Modal */}
               {showModal && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 bg-white/30 backdrop-blur-sm flex justify-center items-center z-50"
                 >
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
                     className="bg-white p-6 rounded-2xl shadow-xl w-[400px]"
                   >
                     <h3 className="text-lg font-bold text-[#303345] mb-4">
@@ -366,9 +369,7 @@ const Dashboard = () => {
                         required
                         className="border p-2 rounded"
                         value={newEvent.title}
-                        onChange={(e) =>
-                          setNewEvent({ ...newEvent, title: e.target.value })
-                        }
+                        onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                       />
                       <textarea
                         placeholder="Description"
@@ -390,13 +391,13 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setShowModal(false)}
-                          className="px-3 py-1 rounded bg-gray-300"
+                          className="px-3 py-1 rounded bg-gray-300 hover:bg-gray-400 transition"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="px-3 py-1 rounded bg-[#303345] text-white"
+                          className="px-3 py-1 rounded bg-[#303345] text-black hover:bg-[#50506b] transition"
                         >
                           {newEvent._id ? "Update" : "Add"}
                         </button>
@@ -405,17 +406,48 @@ const Dashboard = () => {
                   </motion.div>
                 </motion.div>
               )}
+
             </motion.div>
 
+            {/* TO DOs */}
+            {/* TO DOs */}
             {/* TO DOs */}
             <motion.div
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex-1 bg-white rounded-2xl shadow-md p-6"
+              className="flex-1 bg-white rounded-2xl shadow-md p-6 overflow-auto"
             >
               <h3 className="text-lg font-semibold mb-4 text-[#303345]">TO DOs</h3>
-              <p className="text-gray-600">Reminders here...</p>
+
+              {events.length === 0 ? (
+                <p className="text-gray-500 italic">No events yet. Add one to get started!</p>
+              ) : (
+                <ul className="space-y-3 max-h-[300px] overflow-y-auto">
+                  {[...events]
+                    .filter((event) => new Date(event.date) >= new Date()) // optional: only show upcoming
+                    .sort((a, b) => new Date(a.date) - new Date(b.date))
+                    .map((event) => (
+                      <li
+                        key={event._id}
+                        onClick={() => setSelectedDate(new Date(event.date))} // ✅ syncs with calendar
+                        className="p-3 bg-[#E8EAF6] rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-[#C5CAE9] transition"
+                      >
+                        <div>
+                          <h4 className="font-bold text-[#1F1F30]">{event.title}</h4>
+                          <p className="text-sm text-gray-600">
+                            {new Date(event.date).toLocaleDateString()} — {event.description}
+                          </p>
+                        </div>
+                        {new Date(event.date).toDateString() === new Date().toDateString() && (
+                          <span className="text-xs font-medium bg-[#303345] text-white px-2 py-1 rounded">
+                            Today
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                </ul>
+              )}
             </motion.div>
           </div>
 
