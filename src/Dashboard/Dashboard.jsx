@@ -95,16 +95,34 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await axios.post("https://your-api-endpoint.com/logout");
-      localStorage.removeItem("fullname");
-      localStorage.removeItem("token");
-      navigate("/login");
-    } catch (error) {
-      console.error("Error logging out:", error);
-      navigate("/login");
-    }
+  const handleLogout = () => {
+    // Clear all auth-related data from localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("fullname");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("email");
+    
+    // Show success notification
+    const notification = document.createElement('div');
+    notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500 z-50';
+    notification.innerHTML = `
+      <div class="flex items-center space-x-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>Logged out successfully</span>
+      </div>
+    `;
+    document.body.appendChild(notification);
+    
+    // Remove notification after animation
+    setTimeout(() => {
+      notification.style.opacity = '0';
+      setTimeout(() => notification.remove(), 500);
+    }, 2000);
+
+    // Redirect to login page
+    navigate("/login");
   };
 
   if (loading) {
