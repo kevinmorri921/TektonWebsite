@@ -449,7 +449,7 @@ const Dashboard = () => {
           </motion.div>
 
           {/* Search bar */}
-          <motion.div
+          {/* <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.8 }}
@@ -460,7 +460,7 @@ const Dashboard = () => {
               placeholder="Search"
               className="w-40 px-4 py-2 rounded-lg bg-[#C5CAE9] text-[#1F1F30] placeholder-gray-700 focus:outline-none"
             />
-          </motion.div>
+          </motion.div> */}
         </motion.main>
       </motion.div>
     </div>

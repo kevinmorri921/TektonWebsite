@@ -25,6 +25,7 @@ function Analytics() {
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [selectedSurvey, setSelectedSurvey] = useState(null);
   const [mapView, setMapView] = useState("satellite");
+  const [searchQuery, setSearchQuery] = useState("");
   const [showSurveyList, setShowSurveyList] = useState(false);
   const [showSurveyDetails, setShowSurveyDetails] = useState(false);
   const [popupPos, setPopupPos] = useState({ left: 0, top: 0 });
@@ -146,6 +147,31 @@ function Analytics() {
     }
   }
 
+ const handleExport = () => {
+    if (!selectedDetails || !selectedMarker) return;
+    try {
+      // Merge coordinates into export object
+      const exportObj = {
+        ...selectedDetails,
+        latitude: selectedMarker.latitude ?? selectedMarker.lat ?? null,
+        longitude: selectedMarker.longitude ?? selectedMarker.lng ?? null,
+      };
+      const dataStr = JSON.stringify(exportObj, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selectedDetails.name || "survey"}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to export survey");
+    }
+  };
+
   const selectedDetails =
     selectedMarker &&
     selectedMarker.surveys?.find((s) => s.name === selectedSurvey);
@@ -232,42 +258,76 @@ function Analytics() {
       {/* Survey List Popup */}
       {/* Survey List & Details Popup */}
       {/* Survey List Popup */}
-<AnimatePresence>
-  {showSurveyList && selectedMarker && (
-    <motion.div
-      className="absolute z-[3000]"
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      style={{ left: popupPos.left, top: popupPos.top, transform: "translate(-10%, -100%)" }}
-    >
-      <div className="bg-white rounded-3xl shadow-2xl p-6 border border-gray-200 w-[360px] relative">
-
-        {/* Close Button */}
-        <button
-          onClick={() => setShowSurveyList(false)}
-          className="absolute top-4 right-4 text-red-500 hover:text-red-600 transition"
+    <AnimatePresence>
+      {showSurveyList && selectedMarker && (
+        <motion.div
+          className="absolute z-[3000]"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+          style={{ left: popupPos.left, top: popupPos.top, transform: "translate(-50%, -120%)" }}
         >
-          <X size={20} strokeWidth={2.2} />
-        </button>
+      <div className="bg-white rounded-2xl shadow-2xl p-5 border border-gray-200 w-[380px] relative">
 
-        {/* Title */}
-        <h2 className="text-xl text-[#303345] font-semibold text-center mb-4">Survey List</h2>
+        {/* Top row: title + close */}
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h3 className="text-lg text-[#303345] font-semibold">Survey List</h3>
+            <p className="text-xs text-gray-500 mt-1">{selectedMarker.name || `${(selectedMarker.latitude ?? selectedMarker.lat) || "--"}, ${(selectedMarker.longitude ?? selectedMarker.lng) || "--"}`}</p>
+          </div>
 
-        <div className="space-y-3 max-h-[310px] overflow-y-auto pr-1">
-          {selectedMarker.surveys?.map((survey, i) => (
-            <div
-              key={i}
-              onClick={() => {
-                setSelectedSurvey(survey.name); // select the survey
-                setShowSurveyList(false);        // close the list
-                setShowSurveyDetails(true);      // open the details modal
-              }}
-              className="bg-[#2C2F3A] text-white text-center py-3 rounded-full cursor-pointer hover:bg-[#3b3e4b] transition"
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 mr-1">{selectedMarker.surveys ? selectedMarker.surveys.length : 0}</span>
+            <ClipboardList className="w-5 h-5" style={{ color: "#303345" }} />
+            <button
+              onClick={() => setShowSurveyList(false)}
+              className="ml-2 text-gray-400 hover:text-gray-600 transition p-1 rounded"
+              aria-label="Close survey list"
             >
-              {survey.name || `Survey ${i + 1}`}
-            </div>
-          ))}
+              <X size={18} strokeWidth={2.2} />
+            </button>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className="mt-3">
+          <input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search surveys..."
+            className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-300"
+          />
+        </div>
+
+        {/* List */}
+        <div className="mt-3 space-y-2 max-h-[300px] overflow-y-auto pr-1">
+          {Array.isArray(selectedMarker.surveys) && selectedMarker.surveys.length > 0 ? (
+            selectedMarker.surveys
+              .filter((s) => (searchQuery ? (s.name || "").toLowerCase().includes(searchQuery.toLowerCase()) : true))
+              .map((survey, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    setSelectedSurvey(survey.name);
+                    setShowSurveyList(false);
+                    setShowSurveyDetails(true);
+                  }}
+                  className="flex items-center justify-between gap-3 bg-white hover:bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 cursor-pointer transition"
+                >
+                  <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: "#303345" }}>  {(survey.name || `S${i+1}`)[0]} </div>
+                    <div className="text-sm">
+                      <div className="font-medium text-[#111827]">{survey.name || `Survey ${i + 1}`}</div>
+                      <div className="text-xs text-gray-400">{survey.createdAt ? new Date(survey.createdAt).toLocaleDateString() : "No date"}</div>
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-gray-400">➡</div>
+                </div>
+              ))
+          ) : (
+            <div className="text-center text-sm text-gray-500 py-8">No surveys for this marker.</div>
+          )}
         </div>
       </div>
     </motion.div>
@@ -283,70 +343,104 @@ function Analytics() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="bg-white/90 backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[450px] relative">
+      <div className="bg-white/95 backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[520px] relative">
         <button
           onClick={() => setShowSurveyDetails(false)}
-          className="absolute top-2 right-3 text-gray-600 hover:text-red-600 text-xl"
+          className="absolute top-3 right-3 text-gray-600 hover:text-red-600 p-2 rounded"
+          aria-label="Close details"
         >
-          ❌
+          <X size={20} />
         </button>
 
-        <h3 className="text-2xl font-bold text-center mb-3 text-blue-700">
-          {selectedDetails.name}
-        </h3>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="text-2xl font-bold text-blue-600" style={{ color: "#303345" }}>{selectedDetails.name}</h3>
+            <div className="text-sm text-gray-500 mt-1">{selectedDetails.createdAt ? new Date(selectedDetails.createdAt).toLocaleString() : "No date"}</div>
+          </div>
 
-        <div className="space-y-1 text-sm">
-          <p>🌍 <b>Radio 1:</b> {selectedDetails.radioOne || "N/A"}</p>
-          <p>🌎 <b>Radio 2:</b> {selectedDetails.radioTwo || "N/A"}</p>
-          <p>📏 <b>Line Length:</b> {selectedDetails.lineLength || "N/A"}</p>
-          <p>📈 <b>Line Increment:</b> {selectedDetails.lineIncrement || "N/A"}</p>
-          <p>📅 <b>Created At:</b> {selectedDetails.createdAt ? new Date(selectedDetails.createdAt).toLocaleString() : "N/A"}</p>
+          <div className="flex flex-col items-end gap-2 mr-12 text-sm opacity-90">
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-1.5 text-white px-2.5 py-0.5 rounded text-xs transition"  style={{ backgroundColor: "#303345", color: "white", opacity: 0.9 }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#2a2c3b")}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#303345")}
+            >
+              <FilePlus2 className="w-3.5 h-3.5" /> Export
+            </button>
+
+            <button
+              onClick={() => {
+                try {
+                  navigator.clipboard?.writeText(JSON.stringify(selectedDetails));
+                  alert("Copied to clipboard");
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to copy");
+                }
+              }}
+              className="flex items-center gap-1.5 border border-gray-200 px-2.5 py-0.5 rounded text-xs text-[#303345] transition opacity-90 hover:opacity-100"            >
+              <ClipboardList className="w-3.5 h-3.5" /> Copy
+            </button>
+          </div>
         </div>
 
-        {Array.isArray(selectedDetails.surveyValues) && selectedDetails.surveyValues.length > 0 && (
-          <div className="mt-4">
-            <h4 className="font-semibold text-blue-600 mb-2 text-center">Survey Values</h4>
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm border border-gray-300 rounded-lg">
-                <thead className="bg-blue-100">
-                  <tr>
-                    <th className="px-3 py-2 border-b">#</th>
-                    <th className="px-3 py-2 border-b">From</th>
-                    <th className="px-3 py-2 border-b">To</th>
-                    <th className="px-3 py-2 border-b">Sign</th>
-                    <th className="px-3 py-2 border-b">Number</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedDetails.surveyValues.map((sv, j) => (
-                    <tr key={j} className={j % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                      <td className="px-3 py-2 border-b text-center">{j + 1}</td>
-                      <td className="px-3 py-2 border-b text-center">{sv.from}</td>
-                      <td className="px-3 py-2 border-b text-center">{sv.to}</td>
-                      <td className="px-3 py-2 border-b text-center">{sv.sign}</td>
-                      <td className="px-3 py-2 border-b text-center">{sv.number}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+        <div className="grid grid-cols-2 gap-4 mt-4">
+          <div className="space-y-2 text-sm">
+            <div className="flex items-center gap-2 text-[#303345]"><b>Radio 1:</b><span className="text-gray-700">{selectedDetails.radioOne || "N/A"}</span></div>
+            <div className="flex items-center gap-2 text-[#303345]"><b>Radio 2:</b><span className="text-gray-700">{selectedDetails.radioTwo || "N/A"}</span></div>
+            <div className="flex items-center gap-2 text-[#303345]"><b>Line Length:</b><span className="text-gray-700">{selectedDetails.lineLength || "N/A"}</span></div>
+            <div className="flex items-center gap-2 text-[#303345]"><b>Line Increment:</b><span className="text-gray-700">{selectedDetails.lineIncrement || "N/A"}</span></div>
+            <div className="flex items-center gap-2 text-[#303345]"><b>Points:</b><span className="text-gray-700">{Array.isArray(selectedDetails.surveyValues) ? selectedDetails.surveyValues.length : 0}</span></div>
+            <div className="flex items-center gap-2 text-[#303345]"><b>Latitude:</b><span className="text-gray-700">{selectedMarker?.latitude ?? selectedMarker?.lat ?? "N/A"}</span></div>
+            <div className="flex items-center gap-2 text-[#303345]"><b>Longitude:</b><span className="text-gray-700">{selectedMarker?.longitude ?? selectedMarker?.lng ?? "N/A"}</span></div>
           </div>
-        )}
 
-        <div className="flex gap-3 mt-5">
+          <div>
+            {Array.isArray(selectedDetails.surveyValues) && selectedDetails.surveyValues.length > 0 ? (
+              <div className="overflow-auto max-h-[220px] border border-gray-200 rounded-lg">
+                <table className="min-w-full text-sm">
+                  <thead className="bg-gray-50 sticky top-0">
+                    <tr>
+                      <th className="px-2 py-2 text-left text-[#303345]">#</th>
+                      <th className="px-2 py-2 text-left text-[#303345]">From</th>
+                      <th className="px-2 py-2 text-left text-[#303345]">To</th>
+                      <th className="px-2 py-2 text-left text-[#303345]">Sign</th>
+                      <th className="px-2 py-2 text-left text-[#303345]">Number</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedDetails.surveyValues.map((sv, j) => (
+                      <tr key={j} className={'${j % 2 === 0 ? "bg-white" : "bg-gray-50"} text-gray-500 text-center'}>
+                        <td className="px-2 py-1">{j + 1}</td>
+                        <td className="px-2 py-1">{sv.from}</td>
+                        <td className="px-2 py-1">{sv.to}</td>
+                        <td className="px-2 py-1">{sv.sign}</td>
+                        <td className="px-2 py-1">{sv.number}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-gray-500">No survey values.</div>
+            )}
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-5 justify-end">
           <button
             onClick={() => {
               setShowSurveyDetails(false);
               setShowSurveyList(true);
             }}
-            className="flex-1 bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
+            className="bg-gray-200 text-gray-800 px-4 py-2 rounded hover:bg-gray-300"
           >
             ⬅ Back
           </button>
 
           <button
             onClick={() => setShowSurveyDetails(false)}
-            className="flex-1 bg-gray-600 text-black-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+            className="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-800"
           >
             Close
           </button>
@@ -363,3 +457,12 @@ function Analytics() {
 }
 
 export default Analytics;
+
+
+
+
+
+//ALL GOODS
+//GOODS NA EXPORT&COPY
+//POP UP MODAL
+//SURVEY LIST
