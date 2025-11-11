@@ -10,6 +10,8 @@ import changePasswordRoute from "./routes/change-password.js";
 import updateProfileRoute from "./routes/update-profile.js";
 import deleteAccountRoute from "./routes/delete-account.js";
 import eventRoutes from "./routes/eventRoutes.js";
+import adminRoutes from "./routes/adminRoutes.js";
+import adminUserRoutes from "./routes/adminUserRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +41,8 @@ app.use("/api/auth/change-password", changePasswordRoute);
 app.use("/api/auth/update-profile", updateProfileRoute);
 app.use("/api/auth/delete-account", deleteAccountRoute);
 app.use("/api/events", eventRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminUserRoutes);
 
 // 🧾 Root route (for testing)
 app.get("/", (req, res) => {

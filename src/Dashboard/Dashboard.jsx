@@ -20,11 +20,26 @@ const Dashboard = () => {
     description: "",
   });
 
+  // Check if user is super admin
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
   // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const storedName = localStorage.getItem("fullname");
+        // Check if user is super admin
+        try {
+          const response = await axios.get("http://localhost:5000/api/admin/verify", {
+            credentials: 'include'
+          });
+          if (response.status === 200) {
+            setIsSuperAdmin(true);
+          }
+        } catch (error) {
+          setIsSuperAdmin(false);
+        }
+        
         if (storedName) {
           setFullname(storedName);
         } else {
@@ -151,6 +166,19 @@ const Dashboard = () => {
                 >
                   <Settings size={18} className="text-[#303345]" /> Settings
                 </motion.button>
+                {isSuperAdmin && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => navigate("/admin")}
+                    className="flex items-center gap-3 bg-gradient-to-r from-purple-600 to-purple-700 px-4 py-2 w-full rounded-xl text-left font-medium text-white transition shadow-lg hover:shadow-purple-500/25"
+                  >
+                    <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" 
+                        d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Admin Panel
+                  </motion.button>
+                )}
               </nav>
             </div>
 

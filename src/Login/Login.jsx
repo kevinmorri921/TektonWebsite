@@ -33,9 +33,41 @@ const Login = () => {
       const res = await axios.post("http://localhost:5000/api/login", form);
 
       if (res.data.success) {
+        console.log("🔑 Login successful for:", form.email);
+        // Store token and user info
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("fullname", res.data.fullname);
-        navigate("/dashboard");
+        localStorage.setItem("email", form.email);
+        
+        // Check if the user is super admin before any redirection
+        if (form.email === 'super_admin@tekton.com') {
+          console.log("👑 Super admin login detected, verifying access...");
+          try {
+            const adminVerify = await axios.get("http://localhost:5000/api/admin/verify", {
+              headers: {
+                'Authorization': `Bearer ${res.data.token}`
+              }
+            });
+            console.log("🔍 Admin verification response:", adminVerify.data);
+            if (adminVerify.data.isAdmin) {
+              console.log("✅ Admin access verified, redirecting to admin panel");
+              navigate("/admin");
+              return;
+            } else {
+              console.log("❌ Admin verification failed: Not an admin");
+              setMessage("Admin access denied.");
+              return;
+            }
+          } catch (error) {
+            console.error('❌ Admin verification failed:', error.response?.data || error.message);
+            setMessage("Admin verification failed. Please try again.");
+            return;
+          }
+        } else {
+          // Only redirect to dashboard for non-admin users
+          console.log("➡️ Redirecting to dashboard");
+          navigate("/dashboard");
+        }
       } else {
         setMessage(res.data.message || "Login failed. Please try again.");
       }
