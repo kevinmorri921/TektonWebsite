@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { Eye, EyeOff } from "lucide-react"; // 👈 Added
 import bgImage from "../assets/bg-pics.jpg";
 
 const Login = () => {
@@ -8,6 +9,7 @@ const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // 👈 Added state
 
   // Animation state
   const [animate, setAnimate] = useState({
@@ -143,17 +145,28 @@ const Login = () => {
               }`}
             />
 
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              required
-              className={`w-full p-2.5 pl-5 rounded-full text-[12px] bg-gradient-to-r from-[#43425d] to-[#59517e] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 border-none transition-all duration-700 ${
+            {/* 👇 Password input with toggle */}
+            <div
+              className={`relative transition-all duration-700 ${
                 animate.inputs[1] ? "opacity-100 translate-y-0" : "opacity-0 translate-y-3"
               }`}
-            />
+            >
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={form.password}
+                onChange={handleChange}
+                required
+                className="w-full p-2.5 pl-5 pr-10 rounded-full text-[12px] bg-gradient-to-r from-[#43425d] to-[#59517e] text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-400 border-none"
+              />
+              <div
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 cursor-pointer hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </div>
+            </div>
 
             <button
               type="submit"

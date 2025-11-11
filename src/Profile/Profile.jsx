@@ -154,7 +154,7 @@ const Profile = () => {
           </nav>
 
           <div className="space-y-4 mt-auto mb-6">
-            <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/profile")} className="flex items-center gap-3 bg-[#303345] px-4 py-2 w-full rounded-xl text-left font-medium text-white transition"> <User size={18} className="text-white" /> Profile </motion.button>
+            {/*<motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/profile")} className="flex items-center gap-3 bg-[#303345] px-4 py-2 w-full rounded-xl text-left font-medium text-black transition"> <User size={18} className="text-black" /> Profile </motion.button>*/}
             <div className="border-t border-gray-300" />
             <motion.button whileHover={{ scale: 1.05 }} onClick={handleLogout} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition" ><LogOut size={18} /> Log Out </motion.button>
           </div>
@@ -205,7 +205,7 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }} 
                   type="submit" 
                   disabled={loading.name || !fullname.trim()}
-                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
+                  className="w-full bg-[#303345] text-black py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
                 >
                   {loading.name ? "Updating..." : "Update"}
                 </motion.button>
@@ -234,7 +234,7 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }} 
                   type="submit" 
                   disabled={loading.password || !currentPassword || !newPassword}
-                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
+                  className="w-full bg-[#303345] text-black py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
                 >
                   {loading.password ? "Changing..." : "Change Password"}
                 </motion.button>
@@ -251,7 +251,7 @@ const Profile = () => {
                 whileHover={{ scale: 1.05 }} 
                 onClick={handleDeleteAccount} 
                 disabled={loading.delete}
-                className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-red-600 text-black py-2 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-50"
               > 
                 {loading.delete ? "Deleting..." : <><Trash2 size={18} /> Delete Account</>}
               </motion.button>

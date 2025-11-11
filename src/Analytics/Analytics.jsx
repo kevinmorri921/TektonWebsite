@@ -8,6 +8,8 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
 
+import { ArrowLeft, Map, MapPinned, FilePlus2, ClipboardList, X } from "lucide-react";
+
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: new URL("leaflet/dist/images/marker-icon-2x.png", import.meta.url).href,
@@ -20,7 +22,7 @@ function Analytics() {
   const mapRef = useRef(null);
   const markersRef = useRef(null);
   const [surveyData, setSurveyData] = useState([]);
-  const [detailsMap, setDetailsMap] = useState({});
+  const [selectedMarker, setSelectedMarker] = useState(null);
   const [selectedSurvey, setSelectedSurvey] = useState(null);
   const [mapView, setMapView] = useState("satellite");
   const [showSurveyList, setShowSurveyList] = useState(false);
@@ -28,54 +30,40 @@ function Analytics() {
   const [popupPos, setPopupPos] = useState({ left: 0, top: 0 });
   const API_URL = "http://localhost:5000/api/markers";
   const activeMarkerLatLng = useRef(null);
+  const [currentMarkerIndex, setCurrentMarkerIndex] = useState(0);
 
-  useEffect(() => {
-    fetchMarkers();
-  }, []);
+  useEffect(() => { fetchMarkers(); }, []);
 
   const fetchMarkers = async () => {
     try {
       const res = await axios.get(API_URL);
       setSurveyData(res.data);
-    } catch (err) {
-      console.error("Error fetching markers:", err);
-      alert("Failed to load markers!");
-    }
-  };
 
-  // ✅ Fetch single marker details
-  const fetchMarkerDetails = async (id) => {
-    try {
-      const res = await axios.get(`${API_URL}/${id}`);
-      setDetailsMap((prev) => ({
-        ...prev,
-        [id]: [res.data],
-      }));
+      if (res.data.length > 0 && mapRef.current) {
+      const latestIndex = res.data.length - 1;
+      const latest = res.data[res.data.length - 1];
+      const lat = latest.latitude ?? latest.lat;
+      const lng = latest.longitude ?? latest.lng;
+      if (lat && lng) {
+        mapRef.current.setView([lat, lng], 14); // zoom level 14
+        setCurrentMarkerIndex(latestIndex);
+      }
+    }
     } catch (err) {
-      console.error("Error fetching marker details:", err);
-      alert("Failed to load survey details!");
+      console.error(err);
+      alert("Failed to load markers!");
     }
   };
 
   useEffect(() => {
     if (mapRef.current) return;
 
-    const map = L.map("map", {
-      center: [14.5995, 120.9842],
-      zoom: 6,
-    });
+    const map = L.map("map", { center: [14.5995, 120.9842], zoom: 6 });
 
     const baseLayers = {
-      normal: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors",
-      }),
+      normal: L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"),
       satellite: L.tileLayer(
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-        {
-          maxZoom: 19,
-          attribution: "&copy; Esri, OpenStreetMap",
-        }
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
       ),
     };
 
@@ -87,296 +75,289 @@ function Analytics() {
     map.addLayer(markersRef.current);
 
     const reposition = () => {
-      if (!activeMarkerLatLng.current || !mapRef.current) return;
+      if (!activeMarkerLatLng.current) return;
       const pt = mapRef.current.latLngToContainerPoint(activeMarkerLatLng.current);
-      updatePopupPositionFromPoint(pt);
+      setPopupPos({ left: pt.x + 20, top: pt.y - 10 });
     };
+
     map.on("move", reposition);
     map.on("zoom", reposition);
-
-    return () => {
-      map.off("move", reposition);
-      map.off("zoom", reposition);
-    };
   }, []);
 
   useEffect(() => {
     if (!mapRef.current) return;
-    const { baseLayers } = mapRef.current;
-    Object.values(baseLayers).forEach((layer) => mapRef.current.removeLayer(layer));
-    baseLayers[mapView].addTo(mapRef.current);
+    Object.values(mapRef.current.baseLayers).forEach((layer) => mapRef.current.removeLayer(layer));
+    mapRef.current.baseLayers[mapView].addTo(mapRef.current);
   }, [mapView]);
 
-  useEffect(() => {
-    if (!markersRef.current) return;
-    renderMarkers(surveyData);
-  }, [surveyData]);
+  useEffect(() => { if (!markersRef.current) return; renderMarkers(surveyData); }, [surveyData]);
 
-  function updatePopupPositionFromPoint(pt) {
-    const offsetX = 20;
-    const offsetY = -10;
-    setPopupPos({ left: pt.x + offsetX, top: pt.y + offsetY });
-  }
-
-  // ✅ Fixed marker rendering logic
-  function renderMarkers(data) {
+  const renderMarkers = (data) => {
     markersRef.current.clearLayers();
-
     data.forEach((point) => {
-      if (!point.latitude || !point.longitude) return;
+      const lat = point.latitude ?? point.lat;
+      const lng = point.longitude ?? point.lng;
+      if (!lat || !lng) return;
 
-      const marker = L.marker([point.latitude, point.longitude]).bindTooltip(point.name || "Survey", {
-        permanent: false,
-        direction: "top",
-      });
-
-      marker.on("click", async (e) => {
+      const marker = L.marker([lat, lng]);
+      marker.on("click", (e) => {
         activeMarkerLatLng.current = e.latlng;
-        mapRef.current.panTo(e.latlng, { animate: true });
+        mapRef.current.panTo(e.latlng);
         const pt = mapRef.current.latLngToContainerPoint(e.latlng);
-        updatePopupPositionFromPoint(pt);
-
-        // ✅ use MongoDB _id, not index
-        setSelectedSurvey(point._id);
+        setPopupPos({ left: pt.x + 20, top: pt.y - 10 });
+        setSelectedMarker(point);
+        setSelectedSurvey(null);
         setShowSurveyList(true);
         setShowSurveyDetails(false);
-
-        // ✅ Fetch its details
-        await fetchMarkerDetails(point._id);
       });
-
       markersRef.current.addLayer(marker);
     });
-  }
+  };
 
   async function handleFileUpload(e) {
     const files = e.target.files;
     if (!files?.length) return;
 
     const newPoints = [];
-
     for (const file of files) {
       try {
         const text = await file.text();
         const json = JSON.parse(text);
         const entries = Array.isArray(json) ? json : [json];
-
         for (const item of entries) {
           const latitude = parseFloat(item.latitude ?? item.lat);
           const longitude = parseFloat(item.longitude ?? item.lng);
-
           if (!isNaN(latitude) && !isNaN(longitude)) {
-            newPoints.push({
-              name: item.name || item.title || `Survey ${Date.now()}`,
-              createdAt: item.createdAt || new Date().toISOString(),
-              radioOne: item.radioOne || "",
-              radioTwo: item.radioTwo || "",
-              lineLength: item.lineLength || "0",
-              lineIncrement: item.lineIncrement || "0",
-              latitude,
-              longitude,
-              surveyValues: item.surveyValues || [],
-            });
+            newPoints.push({ ...item, latitude, longitude });
           }
         }
-      } catch (err) {
-        console.error("Invalid JSON:", err);
-        alert(`❌ Failed to read ${file.name}. Invalid JSON format.`);
+      } catch {
+        alert(`Failed to parse ${file.name}`);
       }
     }
-
     if (!newPoints.length) return;
 
     try {
-      for (const p of newPoints) {
-        await axios.post(API_URL, p);
-      }
-
+      for (const p of newPoints) await axios.post(API_URL, p);
       await fetchMarkers();
-      alert("✅ Survey file(s) uploaded successfully!");
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("❌ Failed to save survey data!");
+      alert("Coordinates uploaded!");
+    } catch {
+      alert("Failed to save coordinates!");
     }
   }
 
-  const selectedDetails = selectedSurvey && detailsMap[selectedSurvey] ? detailsMap[selectedSurvey] : [];
+  const selectedDetails =
+    selectedMarker &&
+    selectedMarker.surveys?.find((s) => s.name === selectedSurvey);
 
   return (
-    <div className="font-inter bg-gray-50 min-h-screen w-screen flex flex-col overflow-x-hidden">
-      <nav className="bg-blue-600 text-white fixed w-full top-0 z-50 flex justify-between items-center px-6 py-5 shadow-lg">
-        <h1 className="text-2xl font-semibold">📊 Analytics & Survey Map</h1>
+    <div className="w-screen h-screen relative overflow-hidden">
+
+      {/* Dashboard Button */}
+      <button
+        onClick={() => navigate("/dashboard")}
+        className="absolute top-4 right-4 z-[2000] flex items-center gap-2 bg-[#ffffff] text-[#303345] px-4 py-2 rounded-lg shadow hover:bg-[#b0a3a2] transition"
+      >
+        <ArrowLeft className="w-5 h-5" /> Dashboard
+      </button>
+
+      {/* Map */}
+      <div id="map" className="w-full h-full" />
+
+      {/* View Toggle */}
+      <button
+        onClick={() => setMapView((v) => (v === "satellite" ? "normal" : "satellite"))}
+        className="absolute bottom-4 left-4 z-[2000] flex items-center gap-2 bg-[#ffffff] text-[#303345] px-4 py-2 rounded-lg shadow hover:bg-[#b0a3a2] transition"
+      >
+        {mapView === "satellite" ? <Map className="w-5 h-5" /> : <MapPinned className="w-5 h-5" />}
+        {mapView === "satellite" ? "Normal View" : "Satellite View"}
+      </button>
+
+      {/* Previous Marker Button */}
+      <button
+        onClick={() => {
+          if (surveyData.length === 0) return;
+          const prevIndex =
+            (currentMarkerIndex - 1 + surveyData.length) % surveyData.length;
+          const prevMarker = surveyData[prevIndex];
+          const lat = prevMarker.latitude ?? prevMarker.lat;
+          const lng = prevMarker.longitude ?? prevMarker.lng;
+          if (lat && lng && mapRef.current) {
+            mapRef.current.setView([lat, lng], 14);
+            setSelectedMarker(prevMarker);
+            setSelectedSurvey(null);
+            setShowSurveyList(true);
+            setShowSurveyDetails(false);
+            setCurrentMarkerIndex(prevIndex);
+          }
+        }}
+        className="absolute bottom-19 right-25 z-[2000] flex items-center gap-2 bg-[#ffffff] text-[#303345] px-4 py-2 rounded-lg shadow hover:bg-[#b0a3a2] transition"
+      >
+        ◀ Previous
+      </button>
+
+      {/* Next Marker Button */}
+      <button
+        onClick={() => {
+          if (surveyData.length === 0) return;
+          const nextIndex = (currentMarkerIndex + 1) % surveyData.length;
+          const nextMarker = surveyData[nextIndex];
+          const lat = nextMarker.latitude ?? nextMarker.lat;
+          const lng = nextMarker.longitude ?? nextMarker.lng;
+          if (lat && lng && mapRef.current) {
+            mapRef.current.setView([lat, lng], 14);
+            setSelectedMarker(nextMarker);
+            setSelectedSurvey(null);
+            setShowSurveyList(true);
+            setShowSurveyDetails(false);
+            setCurrentMarkerIndex(nextIndex);
+          }
+        }}
+        className="absolute bottom-19 right-4 z-[2000] flex items-center gap-2 bg-[#ffffff] text-[#303345] px-4 py-2 rounded-lg shadow hover:bg-[#b0a3a2] transition"
+      >
+        Next ▶
+      </button>
+
+
+
+      {/* Upload Controls */}
+      <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-[2000]">
+        <label className="flex items-center justify-center gap-2 bg-[#ffffff] text-[#303345] text-sm px-6 py-2 rounded-lg shadow hover:bg-[#b0a3a2] transition cursor-pointer whitespace-nowrap">
+          <FilePlus2 className="w-5 h-5" />
+          Upload Coordinates
+          <input type="file" accept=".json" multiple onChange={handleFileUpload} className="hidden" />
+        </label>
+      </div>
+
+      {/* Survey List Popup */}
+      {/* Survey List & Details Popup */}
+      {/* Survey List Popup */}
+<AnimatePresence>
+  {showSurveyList && selectedMarker && (
+    <motion.div
+      className="absolute z-[3000]"
+      initial={{ opacity: 0, scale: 0.9 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      style={{ left: popupPos.left, top: popupPos.top, transform: "translate(-10%, -100%)" }}
+    >
+      <div className="bg-white rounded-3xl shadow-2xl p-6 border border-gray-200 w-[360px] relative">
+
+        {/* Close Button */}
         <button
-          onClick={() => navigate("/dashboard")}
-          className="bg-white text-blue-600 px-5 py-2 rounded-md font-semibold hover:bg-blue-100 transition"
+          onClick={() => setShowSurveyList(false)}
+          className="absolute top-4 right-4 text-red-500 hover:text-red-600 transition"
         >
-          ⬅ Back to Dashboard
+          <X size={20} strokeWidth={2.2} />
         </button>
-      </nav>
 
-      <main className="flex-1 w-full pt-[90px] px-6 pb-10">
-        <section className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <h2 className="text-2xl font-semibold mb-4">📂 Upload Coordinates</h2>
-          <input type="file" accept=".json" multiple onChange={handleFileUpload} className="mb-2" />
-        </section>
+        {/* Title */}
+        <h2 className="text-xl text-[#303345] font-semibold text-center mb-4">Survey List</h2>
 
-        <section className="bg-white rounded-2xl shadow-lg p-6 relative">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-semibold">🗺️ Survey Locations</h2>
-            <button
-              onClick={() => setMapView((v) => (v === "satellite" ? "normal" : "satellite"))}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition"
+        <div className="space-y-3 max-h-[310px] overflow-y-auto pr-1">
+          {selectedMarker.surveys?.map((survey, i) => (
+            <div
+              key={i}
+              onClick={() => {
+                setSelectedSurvey(survey.name); // select the survey
+                setShowSurveyList(false);        // close the list
+                setShowSurveyDetails(true);      // open the details modal
+              }}
+              className="bg-[#2C2F3A] text-white text-center py-3 rounded-full cursor-pointer hover:bg-[#3b3e4b] transition"
             >
-              Switch to {mapView === "satellite" ? "🗺️ Normal View" : "🛰️ Satellite View"}
-            </button>
+              {survey.name || `Survey ${i + 1}`}
+            </div>
+          ))}
+        </div>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+
+{/* Survey Details Modal */}
+<AnimatePresence>
+  {showSurveyDetails && selectedDetails && (
+    <motion.div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000]"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <div className="bg-white/90 backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[450px] relative">
+        <button
+          onClick={() => setShowSurveyDetails(false)}
+          className="absolute top-2 right-3 text-gray-600 hover:text-red-600 text-xl"
+        >
+          ❌
+        </button>
+
+        <h3 className="text-2xl font-bold text-center mb-3 text-blue-700">
+          {selectedDetails.name}
+        </h3>
+
+        <div className="space-y-1 text-sm">
+          <p>🌍 <b>Radio 1:</b> {selectedDetails.radioOne || "N/A"}</p>
+          <p>🌎 <b>Radio 2:</b> {selectedDetails.radioTwo || "N/A"}</p>
+          <p>📏 <b>Line Length:</b> {selectedDetails.lineLength || "N/A"}</p>
+          <p>📈 <b>Line Increment:</b> {selectedDetails.lineIncrement || "N/A"}</p>
+          <p>📅 <b>Created At:</b> {selectedDetails.createdAt ? new Date(selectedDetails.createdAt).toLocaleString() : "N/A"}</p>
+        </div>
+
+        {Array.isArray(selectedDetails.surveyValues) && selectedDetails.surveyValues.length > 0 && (
+          <div className="mt-4">
+            <h4 className="font-semibold text-blue-600 mb-2 text-center">Survey Values</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm border border-gray-300 rounded-lg">
+                <thead className="bg-blue-100">
+                  <tr>
+                    <th className="px-3 py-2 border-b">#</th>
+                    <th className="px-3 py-2 border-b">From</th>
+                    <th className="px-3 py-2 border-b">To</th>
+                    <th className="px-3 py-2 border-b">Sign</th>
+                    <th className="px-3 py-2 border-b">Number</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedDetails.surveyValues.map((sv, j) => (
+                    <tr key={j} className={j % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+                      <td className="px-3 py-2 border-b text-center">{j + 1}</td>
+                      <td className="px-3 py-2 border-b text-center">{sv.from}</td>
+                      <td className="px-3 py-2 border-b text-center">{sv.to}</td>
+                      <td className="px-3 py-2 border-b text-center">{sv.sign}</td>
+                      <td className="px-3 py-2 border-b text-center">{sv.number}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
+        )}
 
-          <div id="map" className="w-full h-[calc(100vh-260px)] rounded-xl border border-gray-200" />
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={() => {
+              setShowSurveyDetails(false);
+              setShowSurveyList(true);
+            }}
+            className="flex-1 bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
+          >
+            ⬅ Back
+          </button>
 
-          <AnimatePresence>
-            {showSurveyList && selectedSurvey && (
-              <motion.div
-                className="absolute z-[1000]"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-                style={{
-                  left: popupPos.left,
-                  top: popupPos.top,
-                  transform: "translate(-10%, -100%)",
-                }}
-              >
-                <div className="bg-white/70 backdrop-blur-lg rounded-xl shadow-2xl p-4 border border-gray-300 w-80 relative">
-                  <button
-                    onClick={() => setShowSurveyList(false)}
-                    className="absolute top-2 right-2 text-gray-500 hover:text-red-600"
-                  >
-                    ❌
-                  </button>
-                  <h2 className="text-xl font-semibold mb-3 text-center text-blue-700">
-                    📋 Survey List
-                  </h2>
+          <button
+            onClick={() => setShowSurveyDetails(false)}
+            className="flex-1 bg-gray-600 text-black-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  )}
+</AnimatePresence>
 
-                  <div className="max-h-[250px] overflow-y-auto space-y-2">
-                    <div
-                      onClick={async () => {
-                        if (!detailsMap[selectedSurvey]) {
-                          await fetchMarkerDetails(selectedSurvey);
-                        }
-                        setShowSurveyList(false);
-                        setShowSurveyDetails(true);
-                      }}
-                      className="p-3 rounded-lg border bg-blue-50/80 border-blue-400 shadow-md cursor-pointer hover:bg-blue-100 transition"
-                    >
-                      <p className="font-semibold text-blue-700 underline">
-                        {
-                          surveyData.find((s) => s._id === selectedSurvey)?.name ||
-                          surveyData.find((s) => s._id === selectedSurvey)?.title ||
-                          "Survey"
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
-          {/* ✅ Fixed survey details modal logic */}
-          <AnimatePresence>
-            {showSurveyDetails && (
-              <motion.div
-                className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[2000]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <div className="bg-white/90 backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[450px] relative">
-                  <button
-                    onClick={() => setShowSurveyDetails(false)}
-                    className="absolute top-2 right-3 text-gray-600 hover:text-red-600 text-xl"
-                  >
-                    ❌
-                  </button>
 
-                  {selectedDetails.length > 0 ? (
-                    selectedDetails.map((d, i) => (
-                      <div key={i} className="mb-3 border-b pb-2">
-                        <h3 className="text-2xl font-bold text-center mb-3 text-blue-700">
-                          {d.name || d.title || `Detail ${i + 1}`}
-                        </h3>
-
-                        <div className="space-y-1 text-sm">
-                          <p>📍 <b>Coordinates:</b> {d.latitude}, {d.longitude}</p>
-                          <p>🌍 <b>Radio 1:</b> {d.radioOne || "N/A"}</p>
-                          <p>🌎 <b>Radio 2:</b> {d.radioTwo || "N/A"}</p>
-                          <p>📏 <b>Line Length:</b> {d.lineLength || "N/A"}</p>
-                          <p>📈 <b>Line Increment:</b> {d.lineIncrement || "N/A"}</p>
-                          <p>📅 <b>Created At:</b> {d.createdAt ? new Date(d.createdAt).toLocaleString() : "N/A"}</p>
-                        </div>
-
-                        {Array.isArray(d.surveyValues) && d.surveyValues.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="font-semibold text-blue-600 mb-2 text-center">Survey Values</h4>
-                            <div className="overflow-x-auto">
-                              <table className="min-w-full text-sm border border-gray-300 rounded-lg">
-                                <thead className="bg-blue-100">
-                                  <tr>
-                                    <th className="px-3 py-2 border-b">#</th>
-                                    <th className="px-3 py-2 border-b">From</th>
-                                    <th className="px-3 py-2 border-b">To</th>
-                                    <th className="px-3 py-2 border-b">Sign</th>
-                                    <th className="px-3 py-2 border-b">Number</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  {d.surveyValues.map((sv, j) => (
-                                    <tr key={j} className={j % 2 === 0 ? "bg-white" : "bg-gray-50"}>
-                                      <td className="px-3 py-2 border-b text-center">{j + 1}</td>
-                                      <td className="px-3 py-2 border-b text-center">{sv.from}</td>
-                                      <td className="px-3 py-2 border-b text-center">{sv.to}</td>
-                                      <td className="px-3 py-2 border-b text-center">{sv.sign}</td>
-                                      <td className="px-3 py-2 border-b text-center">{sv.number}</td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center">
-                      <p className="text-gray-700 mb-3">⚠️ No details available for this survey.</p>
-                    </div>
-                  )}
-
-                  <div className="flex gap-3 mt-5">
-                    <button
-                      onClick={() => {
-                        setShowSurveyDetails(false);
-                        setShowSurveyList(true);
-                      }}
-                      className="flex-1 bg-gray-300 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-400 transition"
-                    >
-                      ⬅ Back
-                    </button>
-
-                    <button
-                      onClick={() => setShowSurveyDetails(false)}
-                      className="flex-1 bg-gray-600 text-black-800 px-4 py-2 rounded-lg hover:bg-gray-700 transition"
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </section>
-      </main>
     </div>
   );
 }
