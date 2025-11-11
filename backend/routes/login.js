@@ -48,6 +48,10 @@ router.post("/", async (req, res) => {
       });
     }
 
+    // Update last login time
+    user.lastLoginAt = new Date();
+    await user.save();
+
     const isMatch = await bcrypt.compare(password, user.password);
     console.log("🧩 [LOGIN] Password match result:", isMatch);
 

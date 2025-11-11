@@ -15,13 +15,20 @@ const AdminPanel = () => {
     newUsersToday: 0,
     systemStatus: 'healthy'
   });
+  const [showLoginHistory, setShowLoginHistory] = useState(false);
+  const [loginHistory, setLoginHistory] = useState([]);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [showUsers, setShowUsers] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userLoading, setUserLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // userFilter: 'all' | 'online' | 'offline'
+  const [userFilter, setUserFilter] = useState('all');
+  // milliseconds: consider a user 'online' if lastLoginAt is within the last 5 minutes
+  const ONLINE_WINDOW_MS = 5 * 60 * 1000;
   const [editingUser, setEditingUser] = useState(null);
+  const [editFormData, setEditFormData] = useState({ email: '', fullname: '', password: '' });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -29,8 +36,85 @@ const AdminPanel = () => {
   useEffect(() => {
     if (!isEditModalOpen) {
       setEditingUser(null);
+    } else if (editingUser) {
+      setEditFormData({
+        email: editingUser.email || '',
+        fullname: editingUser.fullname || '',
+        password: ''  // Always empty for security
+      });
     }
-  }, [isEditModalOpen]);
+  }, [isEditModalOpen, editingUser]);
+
+  const saveUserChanges = async (e) => {
+    e.preventDefault();
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/users/${editingUser._id}`,
+        {
+          email: editFormData.email.trim(),
+          fullname: editFormData.fullname.trim(),
+          ...(editFormData.password ? { password: editFormData.password } : {})
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Update local state
+      const updatedUsers = users.map(user =>
+        user._id === editingUser._id ? { ...user, ...response.data.user } : user
+      );
+      setUsers(updatedUsers);
+      setFilteredUsers(prevFiltered =>
+        prevFiltered.map(user =>
+          user._id === editingUser._id ? { ...user, ...response.data.user } : user
+        )
+      );
+
+      // Close modal and show success message
+      setIsEditModalOpen(false);
+
+      const notification = document.createElement('div');
+      notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500 z-50';
+      notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>User updated successfully</span>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+      }, 3000);
+
+    } catch (error) {
+      console.error('Failed to update user:', error);
+      
+      const notification = document.createElement('div');
+      notification.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500 z-50';
+      notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>${error.response?.data?.message || 'Failed to update user. Please try again.'}</span>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+      }, 3000);
+    }
+  };
 
   const handleUserEdit = async (updatedData) => {
     try {
@@ -70,26 +154,47 @@ const AdminPanel = () => {
   const toggleUserStatus = async (userId, currentStatus) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/admin/users/${userId}/status`, 
-        { active: !currentStatus },
-        { headers: { 'Authorization': `Bearer ${token}` } }
+      const newStatus = !currentStatus;
+
+      console.log('Toggling user status:', { userId, currentStatus, newStatus });
+
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/users/${userId}/toggle-status`,
+        { 
+          active: newStatus
+        },
+        { 
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          } 
+        }
       );
+
+      console.log('Server response:', response.data);
 
       // Update local state
       const updatedUsers = users.map(user => 
-        user._id === userId ? { ...user, active: !currentStatus } : user
+        user._id === userId ? { ...user, active: newStatus } : user
       );
       setUsers(updatedUsers);
       setFilteredUsers(prevFiltered => 
         prevFiltered.map(user => 
-          user._id === userId ? { ...user, active: !currentStatus } : user
+          user._id === userId ? { ...user, active: newStatus } : user
         )
       );
 
       // Show success notification
       const notification = document.createElement('div');
-      notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500';
-      notification.textContent = `User ${!currentStatus ? 'activated' : 'deactivated'} successfully`;
+      notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500 z-50';
+      notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Account ${!currentStatus ? 'activated' : 'deactivated'} successfully</span>
+        </div>
+      `;
       document.body.appendChild(notification);
       setTimeout(() => {
         notification.style.opacity = '0';
@@ -98,24 +203,60 @@ const AdminPanel = () => {
 
     } catch (error) {
       console.error('Failed to toggle user status:', error);
-      alert(error.response?.data?.message || 'Failed to update user status. Please try again.');
+      
+      // Create error notification
+      const notification = document.createElement('div');
+      notification.className = 'fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transition-opacity duration-500 z-50';
+      notification.innerHTML = `
+        <div class="flex items-center space-x-2">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>${error.response?.data?.message || 'Failed to update account status. Please try again.'}</span>
+        </div>
+      `;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.opacity = '0';
+        setTimeout(() => notification.remove(), 500);
+      }, 3000);
+      
+      // Refresh user list to ensure we have current data
+      await fetchUsers();
     }
   };
 
-  // Filter users based on search query
-  useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredUsers(users);
-      return;
+  // helper to decide if a user is online (based on lastLoginAt)
+  const isUserOnline = (user) => {
+    if (!user || !user.lastLoginAt) return false;
+    try {
+      return (Date.now() - new Date(user.lastLoginAt).getTime()) < ONLINE_WINDOW_MS;
+    } catch (e) {
+      return false;
     }
+  };
 
-    const query = searchQuery.toLowerCase();
-    const filtered = users.filter(user => 
-      user.email?.toLowerCase().includes(query) ||
-      user.fullname?.toLowerCase().includes(query)
-    );
-    setFilteredUsers(filtered);
-  }, [searchQuery, users]);
+  // Filter users based on search query and online/offline filter
+  useEffect(() => {
+    const q = searchQuery.trim().toLowerCase();
+
+    const matched = users.filter(user => {
+      // search matching
+      const matchesSearch = !q || (
+        (user.email || '').toLowerCase().includes(q) ||
+        (user.fullname || '').toLowerCase().includes(q)
+      );
+
+      // filter matching
+      if (userFilter === 'all') return matchesSearch;
+      const online = isUserOnline(user);
+      if (userFilter === 'online' && online) return matchesSearch;
+      if (userFilter === 'offline' && !online) return matchesSearch;
+      return false;
+    });
+
+    setFilteredUsers(matched);
+  }, [searchQuery, users, userFilter]);
 
   const fetchUsers = async () => {
     setUserLoading(true);
@@ -124,8 +265,11 @@ const AdminPanel = () => {
       const response = await axios.get('http://localhost:5000/api/admin/users', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      setUsers(response.data);
-      setFilteredUsers(response.data);
+      const usersData = response.data || [];
+      setUsers(usersData);
+      setFilteredUsers(usersData);
+      // Update total users count in stats
+      setStats(prev => ({ ...prev, totalUsers: Array.isArray(usersData) ? usersData.length : 0 }));
     } catch (error) {
       console.error('Failed to fetch users:', error);
     } finally {
@@ -150,6 +294,8 @@ const AdminPanel = () => {
       const updatedUsers = users.filter(user => user._id !== userId);
       setUsers(updatedUsers);
       setFilteredUsers(prevFiltered => prevFiltered.filter(user => user._id !== userId));
+  // update total users count
+  setStats(prev => ({ ...prev, totalUsers: updatedUsers.length }));
 
       // Show success notification
       const notification = document.createElement('div');
@@ -199,6 +345,12 @@ const AdminPanel = () => {
         });
 
         setStats(statsResponse.data);
+        // Also fetch full user list so we can display accurate total users
+        try {
+          await fetchUsers();
+        } catch (e) {
+          // fetchUsers already logs errors; ignore here
+        }
       } catch (error) {
         console.error('Admin verification failed:', error.response?.data || error.message);
         setAdminInfo(prev => ({
@@ -299,7 +451,6 @@ const AdminPanel = () => {
           <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
             <h3 className="text-gray-400 text-sm font-medium">Total Users</h3>
             <p className="text-3xl font-bold mt-2">{stats.totalUsers}</p>
-            <div className="mt-2 text-green-400 text-sm">↑ 12% from last month</div>
           </div>
           <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
             <h3 className="text-gray-400 text-sm font-medium">Active Users</h3>
@@ -311,10 +462,28 @@ const AdminPanel = () => {
             <p className="text-3xl font-bold mt-2">{stats.newUsersToday}</p>
             <div className="mt-2 text-purple-400 text-sm">↑ 5 in last hour</div>
           </div>
-          <div className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
-            <h3 className="text-gray-400 text-sm font-medium">System Status</h3>
-            <p className="text-3xl font-bold mt-2 capitalize">{stats.systemStatus}</p>
-            <div className="mt-2 text-green-400 text-sm">All systems operational</div>
+          <div 
+            className="bg-gray-800/50 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50 cursor-pointer group relative"
+            onClick={() => setShowLoginHistory(true)}
+          >
+            <h3 className="text-gray-400 text-sm font-medium">Login Activity</h3>
+            <div className="mt-4 space-y-2">
+              {users
+                .filter(user => user.lastLoginAt) // Only show users who have logged in
+                .sort((a, b) => new Date(b.lastLoginAt) - new Date(a.lastLoginAt)) // Sort by most recent login
+                .slice(0, 3) // Take only the 3 most recent
+                .map(user => (
+                  <div 
+                    key={user._id} 
+                    className="flex items-center space-x-2 text-sm opacity-70 hover:opacity-100 transition-opacity"
+                    title={`Last login: ${new Date(user.lastLoginAt).toLocaleString()}`}
+                  >
+                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
+                    <span className="text-white truncate">{user.email}</span>
+                  </div>
+                ))}
+            </div>
+            <div className="mt-2 text-purple-400 text-sm">Click to view all</div>
           </div>
         </div>
 
@@ -393,7 +562,7 @@ const AdminPanel = () => {
                 </button>
               </div>
 
-              {/* Search Bar */}
+              {/* Search Bar + Filter */}
               <div className="flex items-center space-x-4">
                 <div className="flex-1 relative">
                   <input
@@ -417,6 +586,22 @@ const AdminPanel = () => {
                     <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
+
+                {/* Online / Offline filter dropdown */}
+                <div>
+                  <label htmlFor="user-filter" className="sr-only">Filter users</label>
+                  <select
+                    id="user-filter"
+                    value={userFilter}
+                    onChange={(e) => setUserFilter(e.target.value)}
+                    className="bg-gray-700/50 border border-gray-600 text-white py-2 px-3 rounded-lg focus:outline-none"
+                  >
+                    <option value="all">All</option>
+                    <option value="online">Online</option>
+                    <option value="offline">Offline</option>
+                  </select>
+                </div>
+
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery('')}
@@ -607,29 +792,15 @@ const AdminPanel = () => {
                 </button>
               </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const formData = new FormData(e.target);
-                  const updatedData = {
-                    email: formData.get('email'),
-                    fullname: formData.get('fullname'),
-                  };
-                  if (formData.get('password')) {
-                    updatedData.password = formData.get('password');
-                  }
-                  handleUserEdit(updatedData);
-                }}
-                className="space-y-4"
-              >
+              <form onSubmit={saveUserChanges} className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-400 mb-1">
                     Email
                   </label>
                   <input
                     type="email"
-                    name="email"
-                    defaultValue={editingUser?.email}
+                    value={editFormData.email}
+                    onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
                     required
                     className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
@@ -641,8 +812,8 @@ const AdminPanel = () => {
                   </label>
                   <input
                     type="text"
-                    name="fullname"
-                    defaultValue={editingUser?.fullname}
+                    value={editFormData.fullname}
+                    onChange={(e) => setEditFormData({ ...editFormData, fullname: e.target.value })}
                     required
                     className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
@@ -654,7 +825,8 @@ const AdminPanel = () => {
                   </label>
                   <input
                     type="password"
-                    name="password"
+                    value={editFormData.password}
+                    onChange={(e) => setEditFormData({ ...editFormData, password: e.target.value })}
                     placeholder="••••••••"
                     className="w-full bg-gray-700/50 border border-gray-600 rounded-lg px-4 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
@@ -680,6 +852,66 @@ const AdminPanel = () => {
           </div>
         )}
       </div>
+
+      {/* Login History Modal */}
+      {showLoginHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div className="relative bg-gray-800 rounded-xl p-6 max-w-2xl w-full mx-4 border border-gray-700/50">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold text-white">Login History</h2>
+              <button
+                onClick={() => setShowLoginHistory(false)}
+                className="text-gray-400 hover:text-white"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="max-h-[60vh] overflow-y-auto">
+              <table className="w-full">
+                <thead className="sticky top-0 bg-gray-800">
+                  <tr className="text-left text-gray-400 text-sm">
+                    <th className="py-3 px-4">User</th>
+                    <th className="py-3 px-4">Last Activity</th>
+                    <th className="py-3 px-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(user => (
+                    <tr key={user._id} className="border-t border-gray-700">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${user.isEnabled ? 'bg-green-400' : 'bg-red-400'}`}></div>
+                          <span className="text-white">{user.email}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-gray-400">
+                        {user.lastLoginAt 
+                          ? new Date(user.lastLoginAt).toLocaleString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })
+                          : 'Never logged in'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          user.isEnabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {user.isEnabled ? 'Active' : 'Suspended'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
