@@ -31,7 +31,7 @@ const AdminPanel = () => {
   // milliseconds: consider a user 'online' if lastLoginAt is within the last 5 minutes
   const ONLINE_WINDOW_MS = 5 * 60 * 1000;
   const [editingUser, setEditingUser] = useState(null);
-  const [editFormData, setEditFormData] = useState({ email: '', fullname: '', password: '' });
+  const [editFormData, setEditFormData] = useState({ email: '', fullname: '', password: '', role: '' });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -43,7 +43,8 @@ const AdminPanel = () => {
       setEditFormData({
         email: editingUser.email || '',
         fullname: editingUser.fullname || '',
-        password: ''  // Always empty for security
+        password: '',  // Always empty for security
+        role: editingUser.role || 'Researcher'  // <-- populate role
       });
     }
   }, [isEditModalOpen, editingUser]);
@@ -54,30 +55,24 @@ const AdminPanel = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await axios.put(
-        `http://localhost:5000/api/admin/users/${editingUser._id}`,
+        `http://localhost:5000/api/admin/users/${editingUser._id}/role`,
         {
           email: editFormData.email.trim(),
           fullname: editFormData.fullname.trim(),
+          role: editFormData.role, 
           ...(editFormData.password ? { password: editFormData.password } : {})
         },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
+          { headers: { Authorization: `Bearer ${token}` } }
       );
 
       // Update local state
       const updatedUsers = users.map(user =>
         user._id === editingUser._id ? { ...user, ...response.data.user } : user
-      );
+    );
       setUsers(updatedUsers);
-      setFilteredUsers(prevFiltered =>
-        prevFiltered.map(user =>
-          user._id === editingUser._id ? { ...user, ...response.data.user } : user
-        )
-      );
+      setFilteredUsers(prev => prev.map(user =>
+        user._id === editingUser._id ? { ...user, ...response.data.user } : user
+      ));
 
       // Close modal and show success message
       setIsEditModalOpen(false);
@@ -631,7 +626,9 @@ const AdminPanel = () => {
                       <th className="pb-4 px-6 text-gray-600 font-medium">Full Name</th>
                       <th className="pb-4 px-6 text-gray-600 font-medium">Joined</th>
                       <th className="pb-4 px-6 text-gray-600 font-medium">Status</th>
+                      <th className="pb-4 px-6 text-gray-600 font-medium">Role</th>
                       <th className="pb-4 px-6 text-gray-600 font-medium">Actions</th>
+
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200">
@@ -664,6 +661,9 @@ const AdminPanel = () => {
                           }`}>
                             {user.active ? 'Active' : 'Inactive'}
                           </span>
+                        </td>
+                        <td className="py-4 px-6 text-gray-700">
+                          {user.role || '-'}
                         </td>
                         <td className="py-4 px-6">
                           <div className="flex items-center space-x-2">
@@ -839,10 +839,26 @@ const AdminPanel = () => {
                   />
                 </div>
 
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role
+                  </label>
+                  <select
+                    value={editFormData.role}
+                    onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value })}
+                    className="w-full bg-gray-100 border border-gray-300 rounded-lg px-4 py-2 text-[#303345] placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  >
+                    <option value="encoder">Encoder</option>
+                    <option value="researcher">Researcher</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+
+
                 <div className="flex space-x-3 mt-6 pt-4 border-t border-gray-200">
                   <button
                     type="submit"
-                    className="flex-1 bg-[#303345] hover:bg-gray-700 text-white py-2 rounded-lg transition-colors font-medium"
+                    className="flex-1 bg-[#303345] hover:bg-gray-700 text-black-800 py-2 rounded-lg transition-colors font-medium"
                   >
                     Save Changes
                   </button>

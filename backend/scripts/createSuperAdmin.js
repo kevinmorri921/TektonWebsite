@@ -1,17 +1,18 @@
 import bcrypt from 'bcryptjs';
 import User from '../models/user.js';
-import { connect } from '../config/db.js';
+import connectDB from '../config/db.js';
+import logger from '../logger.js';
 
 const createSuperAdmin = async () => {
     try {
-        await connect();
+        await connectDB();
         
         const superAdminEmail = 'super_admin@tekton.com';
         
         // Check if super admin already exists
         const existingAdmin = await User.findOne({ email: superAdminEmail });
         if (existingAdmin) {
-            console.log('✅ Super admin already exists');
+            logger.info('✅ Super admin already exists');
             process.exit(0);
         }
 
@@ -25,10 +26,10 @@ const createSuperAdmin = async () => {
         });
 
         await superAdmin.save();
-        console.log('✅ Super admin created successfully');
+        logger.info('✅ Super admin created successfully');
         process.exit(0);
     } catch (error) {
-        console.error('❌ Error creating super admin:', error);
+        logger.error('❌ Error creating super admin: %o', error);
         process.exit(1);
     }
 };

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import connectDB from "./config/db.js";
+import logger, { scrub } from "./logger.js";
 
 import authRoutes from "./routes/auth.js";
 import loginRoute from "./routes/login.js";
@@ -33,6 +34,13 @@ app.use(
 app.use(express.json({ limit: "10mb" })); // ✅ replaces bodyParser
 app.use(express.urlencoded({ extended: true }));
 
+// Simple request logger (don't log sensitive fields)
+app.use((req, res, next) => {
+  const safeBody = scrub(req.body);
+  logger.info("Incoming request %s %s %o", req.method, req.originalUrl, safeBody);
+  next();
+});
+
 // 🛣 API Routes
 app.use("/api", authRoutes);
 app.use("/api/login", loginRoute);
@@ -49,7 +57,22 @@ app.get("/", (req, res) => {
   res.send("✅ Backend is running successfully with MongoDB & Marker API!");
 });
 
+// Health endpoint for monitoring
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", uptime: process.uptime() });
+});
+
 // 🚀 Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+const server = app.listen(PORT, () => {
+  logger.info(`🚀 Server running on http://localhost:${PORT}`);
+});
+
+// Global error handlers for monitoring
+process.on("uncaughtException", (err) => {
+  logger.error("Uncaught Exception:", err);
+  process.exit(1);
+});
+
+process.on("unhandledRejection", (reason) => {
+  logger.error("Unhandled Rejection:", reason);
 });

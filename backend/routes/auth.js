@@ -1,35 +1,48 @@
 import express from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/user.js";
+import logger, { scrub } from "../logger.js";
 
 const router = express.Router();
 
 // 🧩 SIGNUP Route
 router.post("/signup", async (req, res) => {
   try {
-    const { fullname, email, password } = req.body;
+    const { fullname, email, password, role } = req.body;
 
-    console.log("📩 Signup request received:", req.body);
+    logger.info("[SIGNUP] Signup request received for email=%s from %s", email, req.ip);
 
-    // Check if user exists
+    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      console.log("⚠ User already exists:", email);
+      logger.warn("[SIGNUP] User already exists email=%s", email);
       return res.status(400).json({ success: false, message: "User already exists" });
     }
+
+    // Validate role
+    const allowedRoles = ["SUPER_ADMIN", "admin", "encoder", "researcher"];
+    const assignedRole = allowedRoles.includes(role) ? role : "researcher";
 
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create new user
-    const newUser = new User({ fullname, email, password: hashedPassword });
+    const newUser = new User({ fullname, email, password: hashedPassword, role: assignedRole });
     await newUser.save();
 
-    console.log("✅ User registered:", newUser.email);
-    res.status(201).json({ success: true, message: "User registered successfully" });
+    logger.info("[SIGNUP] User registered email=%s userId=%s", newUser.email, newUser._id);
 
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully",
+      user: {
+        fullname: newUser.fullname,
+        email: newUser.email,
+        role: newUser.role,
+      },
+    });
   } catch (error) {
-    console.error("❌ Signup error:", error.message);
+    logger.error("[SIGNUP] Signup error: %o", error);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });

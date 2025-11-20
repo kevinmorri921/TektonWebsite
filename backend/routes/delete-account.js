@@ -2,18 +2,19 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import logger from "../logger.js";
 
 const router = express.Router();
 
 router.delete("/", async (req, res) => {
-  console.log("🟡 [DELETE-ACCOUNT] Incoming request");
+  logger.info("[DELETE-ACCOUNT] Incoming delete-account request from %s", req.ip);
 
   try {
     // 1️⃣ Get token from header
     const token = req.headers.authorization?.split(" ")[1];
     
     if (!token) {
-      console.log("🔴 [DELETE-ACCOUNT] No token provided");
+      logger.warn("[DELETE-ACCOUNT] No token provided from %s", req.ip);
       return res.status(401).json({
         success: false,
         message: "Authentication required",
@@ -24,9 +25,9 @@ router.delete("/", async (req, res) => {
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("🟢 [DELETE-ACCOUNT] Token verified for user ID:", decoded.id);
+      logger.info("[DELETE-ACCOUNT] Token verified for userId=%s", decoded.id);
     } catch (error) {
-      console.log("🔴 [DELETE-ACCOUNT] Invalid token");
+      logger.warn("[DELETE-ACCOUNT] Invalid token from %s", req.ip);
       return res.status(401).json({
         success: false,
         message: "Invalid or expired token",
@@ -37,14 +38,14 @@ router.delete("/", async (req, res) => {
     const user = await User.findByIdAndDelete(decoded.id);
     
     if (!user) {
-      console.log("🔴 [DELETE-ACCOUNT] User not found");
+      logger.warn("[DELETE-ACCOUNT] User not found userId=%s", decoded.id);
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    console.log("✅ [DELETE-ACCOUNT] Account deleted successfully for:", user.email);
+    logger.info("[DELETE-ACCOUNT] Account deleted successfully for user=%s userId=%s", user.email, user._id);
 
     // 4️⃣ Success response
     res.status(200).json({
@@ -53,7 +54,7 @@ router.delete("/", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("🔥 [DELETE-ACCOUNT] Server error:", error);
+    logger.error("[DELETE-ACCOUNT] Server error: %o", error);
     res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",

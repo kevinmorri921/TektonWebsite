@@ -1,12 +1,13 @@
 // routes/update-profile.js
 import express from "express";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User from "../models/user.js";
+import logger from "../logger.js";
 
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  console.log("🟡 [UPDATE-PROFILE] Incoming request");
+  logger.info("[UPDATE-PROFILE] Incoming request from %s", req.ip);
 
   const { fullname } = req.body;
 
@@ -15,7 +16,7 @@ router.post("/", async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     
     if (!token) {
-      console.log("🔴 [UPDATE-PROFILE] No token provided");
+      logger.warn("[UPDATE-PROFILE] No token provided from %s", req.ip);
       return res.status(401).json({
         success: false,
         message: "Authentication required",
@@ -26,9 +27,9 @@ router.post("/", async (req, res) => {
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("🟢 [UPDATE-PROFILE] Token verified for user ID:", decoded.id);
+      logger.info("[UPDATE-PROFILE] Token verified for userId=%s", decoded.id);
     } catch (error) {
-      console.log("🔴 [UPDATE-PROFILE] Invalid token");
+      logger.warn("[UPDATE-PROFILE] Invalid token from %s", req.ip);
       return res.status(401).json({
         success: false,
         message: "Invalid or expired token",
@@ -37,7 +38,7 @@ router.post("/", async (req, res) => {
 
     // 3️⃣ Validate request body
     if (!fullname || fullname.trim() === "") {
-      console.log("🔴 [UPDATE-PROFILE] Missing fullname");
+      logger.warn("[UPDATE-PROFILE] Missing fullname for userId=%s", decoded.id);
       return res.status(400).json({
         success: false,
         message: "Fullname is required",
@@ -47,7 +48,7 @@ router.post("/", async (req, res) => {
     // 4️⃣ Find user and update
     const user = await User.findById(decoded.id);
     if (!user) {
-      console.log("🔴 [UPDATE-PROFILE] User not found");
+      logger.warn("[UPDATE-PROFILE] User not found userId=%s", decoded.id);
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -58,7 +59,7 @@ router.post("/", async (req, res) => {
     user.fullname = fullname.trim();
     await user.save();
 
-    console.log("✅ [UPDATE-PROFILE] Name updated successfully for:", user.email);
+    logger.info("✅ [UPDATE-PROFILE] Name updated successfully for user=%s userId=%s", user.email, user._id);
 
     // 6️⃣ Success response
     res.status(200).json({
@@ -68,7 +69,7 @@ router.post("/", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("🔥 [UPDATE-PROFILE] Server error:", error);
+    logger.error("🔥 [UPDATE-PROFILE] Server error: %o", error);
     res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",

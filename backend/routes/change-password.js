@@ -3,6 +3,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import logger, { scrub } from "../logger.js";
 
 const router = express.Router();
 
@@ -11,7 +12,7 @@ const router = express.Router();
  * Handles password change with authentication
  */
 router.post("/", async (req, res) => {
-  console.log("🟡 [CHANGE-PASSWORD] Incoming request");
+  logger.info("[CHANGE-PASSWORD] Incoming request from %s", req.ip);
 
   const { currentPassword, newPassword } = req.body;
 
@@ -20,7 +21,7 @@ router.post("/", async (req, res) => {
     const token = req.headers.authorization?.split(" ")[1];
     
     if (!token) {
-      console.log("🔴 [CHANGE-PASSWORD] No token provided");
+      logger.warn("[CHANGE-PASSWORD] No token provided for change-password from %s", req.ip);
       return res.status(401).json({
         success: false,
         message: "Authentication required",
@@ -31,9 +32,9 @@ router.post("/", async (req, res) => {
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log("🟢 [CHANGE-PASSWORD] Token verified for user ID:", decoded.id);
+      logger.info("[CHANGE-PASSWORD] Token verified for userId=%s", decoded.id);
     } catch (error) {
-      console.log("🔴 [CHANGE-PASSWORD] Invalid token");
+      logger.warn("[CHANGE-PASSWORD] Invalid token from %s", req.ip);
       return res.status(401).json({
         success: false,
         message: "Invalid or expired token",
@@ -42,7 +43,7 @@ router.post("/", async (req, res) => {
 
     // 3️⃣ Validate request body
     if (!currentPassword || !newPassword) {
-      console.log("🔴 [CHANGE-PASSWORD] Missing current or new password");
+      logger.warn("[CHANGE-PASSWORD] Missing passwords for userId=%s", decoded.id);
       return res.status(400).json({
         success: false,
         message: "Current password and new password are required",
@@ -52,7 +53,7 @@ router.post("/", async (req, res) => {
     // 4️⃣ Find user
     const user = await User.findById(decoded.id);
     if (!user) {
-      console.log("🔴 [CHANGE-PASSWORD] User not found");
+      logger.warn("[CHANGE-PASSWORD] User not found userId=%s", decoded.id);
       return res.status(404).json({
         success: false,
         message: "User not found",
@@ -62,7 +63,7 @@ router.post("/", async (req, res) => {
     // 5️⃣ Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
-      console.log("🔴 [CHANGE-PASSWORD] Current password is incorrect");
+      logger.warn("[CHANGE-PASSWORD] Incorrect current password attempt for user=%s from=%s", user.email, req.ip);
       return res.status(400).json({
         success: false,
         message: "Current password is incorrect",
@@ -77,7 +78,7 @@ router.post("/", async (req, res) => {
     user.password = hashedNewPassword;
     await user.save();
 
-    console.log("✅ [CHANGE-PASSWORD] Password updated successfully for:", user.email);
+    logger.info("[CHANGE-PASSWORD] Password updated successfully for user=%s", user.email);
 
     // 8️⃣ Success response
     res.status(200).json({
@@ -86,7 +87,7 @@ router.post("/", async (req, res) => {
     });
 
   } catch (error) {
-    console.error("🔥 [CHANGE-PASSWORD] Server error:", error);
+    logger.error("[CHANGE-PASSWORD] Server error: %o", error);
     res.status(500).json({
       success: false,
       message: "Server error. Please try again later.",
