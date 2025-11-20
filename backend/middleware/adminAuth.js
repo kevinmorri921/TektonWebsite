@@ -2,10 +2,18 @@ import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import logger from "../logger.js";
 
-const JWT_SECRET = process.env.JWT_SECRET || "devSecretKey123";
+// JWT_SECRET will be validated when middleware is used (after dotenv.config() in server)
+const getJWTSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("FATAL: JWT_SECRET environment variable is not set.");
+  }
+  return secret;
+}
 
 const adminAuth = async (req, res, next) => {
   try {
+    const JWT_SECRET = getJWTSecret();
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       logger.warn("[ADMIN AUTH] No token provided for admin route %s %s from %s", req.method, req.originalUrl, req.ip);

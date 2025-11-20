@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import logger, { scrub } from "../logger.js";
+import { body } from "express-validator";
+import { validationSchemas, handleValidationErrors, sendSafeError } from "../middleware/validation.js";
 
 const router = express.Router();
 
@@ -11,7 +13,16 @@ const router = express.Router();
  * 🧩 POST /api/auth/change-password
  * Handles password change with authentication
  */
-router.post("/", async (req, res) => {
+router.post(
+  "/",
+  // Input validation
+  body("currentPassword")
+    .trim()
+    .isLength({ min: 1 })
+    .withMessage("Current password is required"),
+  validationSchemas.password, // Re-use password validation for new password
+  handleValidationErrors,
+  async (req, res) => {
   logger.info("[CHANGE-PASSWORD] Incoming request from %s", req.ip);
 
   const { currentPassword, newPassword } = req.body;
@@ -94,6 +105,7 @@ router.post("/", async (req, res) => {
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
-});
+  }
+);
 
 export default router;

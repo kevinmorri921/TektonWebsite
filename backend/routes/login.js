@@ -3,13 +3,29 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import logger, { scrub } from "../logger.js";
+import { validationSchemas, handleValidationErrors, sendSafeError } from "../middleware/validation.js";
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || "devSecretKey123";
+
+// JWT_SECRET will be validated when route is used (after dotenv.config() in server)
+const getJWTSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error("FATAL: JWT_SECRET environment variable is not set.");
+  }
+  return secret;
+};
 
 // 🧩 POST /api/login
-router.post("/", async (req, res) => {
+router.post(
+  "/",
+  // Input validation
+  validationSchemas.email,
+  validationSchemas.password,
+  handleValidationErrors,
+  async (req, res) => {
   try {
+    const JWT_SECRET = getJWTSecret();
     const { email, password } = req.body;
     logger.info("[LOGIN] Incoming login attempt for email=%s from %s", email, req.ip);
 
@@ -50,6 +66,7 @@ router.post("/", async (req, res) => {
     logger.error("[LOGIN] Server error on login attempt: %o", error);
     res.status(500).json({ success: false, message: "Server error. Please try again later." });
   }
-});
+  }
+);
 
 export default router;

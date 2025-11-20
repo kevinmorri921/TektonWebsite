@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import adminAuth from '../middleware/adminAuth.js';
 import User from '../models/user.js';
 import logger, { scrub } from '../logger.js';
+import { body } from 'express-validator';
+import { validationSchemas, handleValidationErrors, sanitizeInput, sendSafeError } from '../middleware/validation.js';
 
 const router = express.Router();
 
@@ -22,7 +24,12 @@ router.get('/users', adminAuth, async (req, res) => {
 });
 
 // Delete user
-router.delete('/users/:userId', adminAuth, async (req, res) => {
+router.delete(
+  '/users/:userId',
+  adminAuth,
+  validationSchemas.mongoId,
+  handleValidationErrors,
+  async (req, res) => {
     try {
         const { userId } = req.params;
         const userToDelete = await User.findById(userId);
@@ -39,9 +46,11 @@ router.delete('/users/:userId', adminAuth, async (req, res) => {
         logger.info('[ADMIN USERS] User deleted userId=%s by admin=%s', userId, req.user?.id);
         res.json({ message: 'User deleted successfully' });
     } catch (error) {
-        res.status(500).json({ message: 'Error deleting user' });
+        logger.error('[ADMIN USERS] Error deleting user: %o', error);
+        sendSafeError(res, 500, 'Error deleting user', process.env.NODE_ENV === "development");
     }
-});
+  }
+);
 
 // System overview
 router.get('/overview', adminAuth, async (req, res) => {
@@ -68,7 +77,13 @@ router.get('/overview', adminAuth, async (req, res) => {
 });
 
 // Toggle user active status
-router.put('/users/:userId/toggle-status', adminAuth, async (req, res) => {
+router.put(
+  '/users/:userId/toggle-status',
+  adminAuth,
+  validationSchemas.mongoId,
+  body('active').isBoolean().withMessage('Active must be a boolean'),
+  handleValidationErrors,
+  async (req, res) => {
     try {
         const { userId } = req.params;
         const { active } = req.body;
@@ -94,12 +109,21 @@ router.put('/users/:userId/toggle-status', adminAuth, async (req, res) => {
         });
     } catch (error) {
         logger.error('[ADMIN USERS] Error updating user status: %o', error);
-        res.status(500).json({ message: 'Error updating user status' });
+        sendSafeError(res, 500, 'Error updating user status', process.env.NODE_ENV === "development");
     }
-});
+  }
+);
 
 // Update user info (email, fullname, password)
-router.put('/users/:userId', adminAuth, async (req, res) => {
+router.put(
+  '/users/:userId',
+  adminAuth,
+  validationSchemas.mongoId,
+  validationSchemas.email,
+  validationSchemas.fullname,
+  body('password').optional().trim().isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
+  handleValidationErrors,
+  async (req, res) => {
     try {
         const { userId } = req.params;
         const { email, fullname, password } = req.body;
@@ -118,10 +142,10 @@ router.put('/users/:userId', adminAuth, async (req, res) => {
         if (email && email !== user.email) {
             const existingUser = await User.findOne({ email });
             if (existingUser) return res.status(400).json({ message: 'Email already in use' });
-            user.email = email;
+            user.email = email.toLowerCase();
         }
 
-        if (fullname) user.fullname = fullname;
+        if (fullname) user.fullname = sanitizeInput.removeXSS(fullname);
 
         if (password) {
             const salt = await bcrypt.genSalt(10);
@@ -138,12 +162,19 @@ router.put('/users/:userId', adminAuth, async (req, res) => {
 
     } catch (error) {
         logger.error('[ADMIN USERS] Error updating user: %o', error);
-        res.status(500).json({ message: 'Error updating user' });
+        sendSafeError(res, 500, 'Error updating user', process.env.NODE_ENV === "development");
     }
-});
+  }
+);
 
 // ⭐ NEW: Update user role (admin → encoder | researcher | admin)
-router.put('/users/:userId/role', adminAuth, async (req, res) => {
+router.put(
+  '/users/:userId/role',
+  adminAuth,
+  validationSchemas.mongoId,
+  validationSchemas.role,
+  handleValidationErrors,
+  async (req, res) => {
   try {
     const { userId } = req.params;
     const { role } = req.body;
@@ -184,8 +215,8 @@ router.put('/users/:userId/role', adminAuth, async (req, res) => {
     });
 
   } catch (error) {
-        logger.error('[ADMIN USERS] Error updating user role: %o', error);
-        res.status(500).json({ message: 'Error updating user role', error: error.message });
+    logger.error('[ADMIN USERS] Error updating user role: %o', error);
+    sendSafeError(res, 500, 'Error updating user role', process.env.NODE_ENV === "development");
   }
 });
 export default router;

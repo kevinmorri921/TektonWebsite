@@ -1,6 +1,10 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import https from "https";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import connectDB from "./config/db.js";
 import logger, { scrub } from "./logger.js";
 
@@ -14,25 +18,80 @@ import eventRoutes from "./routes/eventRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
 
+// Import security and integrity middleware
+import { integrityMiddleware, checksumValidation } from "./middleware/dataIntegrity.js";
+import { logDependencyAudit, checkForDangerousFunctions } from "./middleware/dependencyManagement.js";
+import { ensureUploadDir } from "./middleware/fileUpload.js";
+import {
+  securityHeadersMiddleware,
+  enhancedCorsMiddleware,
+  frameworkHardeningMiddleware,
+  requestLimitsMiddleware,
+  requestValidationMiddleware,
+  logSecurityConfiguration,
+  validateSecurityConfiguration,
+  secureErrorHandler,
+} from "./middleware/securityConfig.js";
+
 // Load environment variables
 dotenv.config();
 
 // Initialize express
 const app = express();
-const PORT = process.env.PORT || 5000;
+
+// 🔐 SECURITY: Apply framework hardening
+frameworkHardeningMiddleware(app);
 
 // 🧠 Connect to MongoDB
 connectDB();
 
+// 🔐 SECURITY: Validate dependencies and integrity on startup
+logger.info("🔍 [STARTUP] Validating dependencies and integrity...");
+logDependencyAudit();
+const dangerousCheck = checkForDangerousFunctions();
+if (!dangerousCheck.safe) {
+  logger.error(
+    "🚨 [STARTUP] Found dangerous functions in codebase: %o",
+    dangerousCheck.files
+  );
+  process.exit(1);
+}
+logger.info("✅ [STARTUP] Dependency audit complete - safe to proceed");
+
+// 🔐 SECURITY: Ensure upload directory exists
+ensureUploadDir();
+logger.info("✅ [STARTUP] Upload directory ready");
+
+// 🔐 SECURITY: Validate security configuration
+const configValidation = validateSecurityConfiguration();
+if (!configValidation.valid) {
+  logger.error("🚨 [STARTUP] Security configuration invalid - exiting");
+  process.exit(1);
+}
+
+// 🔐 SECURITY: Log security configuration
+logSecurityConfiguration();
+
 // 🧰 Middleware
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
-app.use(express.json({ limit: "10mb" })); // ✅ replaces bodyParser
-app.use(express.urlencoded({ extended: true }));
+
+// 🔐 CORS with environment-based configuration
+app.use(enhancedCorsMiddleware());
+
+// 🔐 Request size limits
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+
+// 🔐 Request validation and security
+app.use(requestValidationMiddleware);
+
+// 🔐 Security headers (comprehensive hardening)
+app.use(securityHeadersMiddleware);
+
+// 🔐 Request timeouts
+app.use(requestLimitsMiddleware);
+
+// 🔐 Security middleware for data integrity
+app.use(integrityMiddleware);
 
 // Simple request logger (don't log sensitive fields)
 app.use((req, res, next) => {
@@ -62,9 +121,61 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", uptime: process.uptime() });
 });
 
+// 🔐 SECURITY: 404 handler (before error handler)
+app.use((req, res) => {
+  res.status(404).json({
+    error: {
+      message: "Not Found",
+      status: 404,
+      timestamp: new Date().toISOString(),
+    },
+  });
+});
+
+// 🔐 SECURITY: Global error handler (must be last)
+app.use(secureErrorHandler);
+
 // 🚀 Start Server
-const server = app.listen(PORT, () => {
-  logger.info(`🚀 Server running on http://localhost:${PORT}`);
+const PORT = process.env.PORT || 5000;
+const NODE_ENV = process.env.NODE_ENV || "development";
+
+// Check for required environment variables
+const requiredEnvVars = ["JWT_SECRET", "MONGO_URI"];
+const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
+if (missingEnvVars.length > 0) {
+  logger.error("FATAL: Missing required environment variables: %s", missingEnvVars.join(", "));
+  process.exit(1);
+}
+
+// Load TLS certificates if in production or if provided
+let server;
+if (NODE_ENV === "production" || (process.env.TLS_CERT && process.env.TLS_KEY)) {
+  try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const certPath = process.env.TLS_CERT || path.join(__dirname, "..", "certs", "server.crt");
+    const keyPath = process.env.TLS_KEY || path.join(__dirname, "..", "certs", "server.key");
+
+    if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+      const cert = fs.readFileSync(certPath);
+      const key = fs.readFileSync(keyPath);
+      server = https.createServer({ cert, key }, app);
+      logger.info("🔒 HTTPS/TLS enabled");
+    } else {
+      logger.warn("TLS certificates not found at expected paths. Running HTTP (dev mode).");
+      server = app;
+    }
+  } catch (err) {
+    logger.error("Error loading TLS certificates: %o", err);
+    server = app;
+  }
+} else {
+  server = app;
+}
+
+server.listen(PORT, () => {
+  const protocol = server instanceof https.Server ? "https" : "http";
+  logger.info(`🚀 Server running on ${protocol}://localhost:${PORT}`);
 });
 
 // Global error handlers for monitoring

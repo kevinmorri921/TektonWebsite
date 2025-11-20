@@ -3,10 +3,16 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import logger from "../logger.js";
+import { validationSchemas, handleValidationErrors, sanitizeInput, sendSafeError } from "../middleware/validation.js";
 
 const router = express.Router();
 
-router.post("/", async (req, res) => {
+router.post(
+  "/",
+  // Input validation
+  validationSchemas.fullname,
+  handleValidationErrors,
+  async (req, res) => {
   logger.info("[UPDATE-PROFILE] Incoming request from %s", req.ip);
 
   const { fullname } = req.body;
@@ -56,7 +62,7 @@ router.post("/", async (req, res) => {
     }
 
     // 5️⃣ Update user name
-    user.fullname = fullname.trim();
+    user.fullname = sanitizeInput.removeXSS(fullname.trim());
     await user.save();
 
     logger.info("✅ [UPDATE-PROFILE] Name updated successfully for user=%s userId=%s", user.email, user._id);
@@ -70,12 +76,9 @@ router.post("/", async (req, res) => {
 
   } catch (error) {
     logger.error("🔥 [UPDATE-PROFILE] Server error: %o", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error. Please try again later.",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    sendSafeError(res, 500, "Server error. Please try again later.", process.env.NODE_ENV === "development");
   }
-});
+  }
+);
 
 export default router;

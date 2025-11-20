@@ -1,5 +1,7 @@
 import express from "express";
 import Event from "../models/event.js";
+import logger from "../logger.js";
+import { validationSchemas, handleValidationErrors, sanitizeInput, sendSafeError } from "../middleware/validation.js";
 
 const router = express.Router();
 
@@ -9,47 +11,100 @@ router.get("/", async (req, res) => {
     const events = await Event.find();
     res.json(events);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    logger.error("[EVENT] Error fetching events: %o", err);
+    sendSafeError(res, 500, "Error fetching events", process.env.NODE_ENV === "development");
   }
 });
 
 // ✅ POST new event
-router.post("/", async (req, res) => {
-  try {
-    const { title, date, description } = req.body;
-    const event = new Event({ title, date, description });
-    await event.save();
-    res.status(201).json(event);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+router.post(
+  "/",
+  // Input validation
+  validationSchemas.eventTitle,
+  validationSchemas.eventDescription,
+  validationSchemas.eventDate,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { title, date, description } = req.body;
+
+      // Sanitize input
+      const sanitizedEvent = {
+        title: sanitizeInput.removeXSS(title),
+        date: date, // Already validated as ISO 8601
+        description: sanitizeInput.removeXSS(description || ""),
+      };
+
+      const event = new Event(sanitizedEvent);
+      await event.save();
+
+      logger.info("[EVENT] New event created: %s", title);
+      res.status(201).json(event);
+    } catch (err) {
+      logger.error("[EVENT] Error creating event: %o", err);
+      sendSafeError(res, 400, "Error creating event", process.env.NODE_ENV === "development");
+    }
   }
-});
+);
 
 // ✅ PUT (update) existing event
-router.put("/:id", async (req, res) => {
-  try {
-    const { title, date, description } = req.body;
-    const updatedEvent = await Event.findByIdAndUpdate(
-      req.params.id,
-      { title, date, description },
-      { new: true } // returns the updated event
-    );
-    if (!updatedEvent) return res.status(404).json({ message: "Event not found" });
-    res.json(updatedEvent);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+router.put(
+  "/:id",
+  validationSchemas.mongoId,
+  validationSchemas.eventTitle,
+  validationSchemas.eventDescription,
+  validationSchemas.eventDate,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const { title, date, description } = req.body;
+
+      // Sanitize input
+      const sanitizedUpdate = {
+        title: sanitizeInput.removeXSS(title),
+        date: date,
+        description: sanitizeInput.removeXSS(description || ""),
+      };
+
+      const updatedEvent = await Event.findByIdAndUpdate(
+        req.params.id,
+        sanitizedUpdate,
+        { new: true }
+      );
+
+      if (!updatedEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      logger.info("[EVENT] Event updated: %s", title);
+      res.json(updatedEvent);
+    } catch (err) {
+      logger.error("[EVENT] Error updating event: %o", err);
+      sendSafeError(res, 400, "Error updating event", process.env.NODE_ENV === "development");
+    }
   }
-});
+);
 
 // ✅ DELETE event
-router.delete("/:id", async (req, res) => {
-  try {
-    const deletedEvent = await Event.findByIdAndDelete(req.params.id);
-    if (!deletedEvent) return res.status(404).json({ message: "Event not found" });
-    res.json({ message: "Event deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+router.delete(
+  "/:id",
+  validationSchemas.mongoId,
+  handleValidationErrors,
+  async (req, res) => {
+    try {
+      const deletedEvent = await Event.findByIdAndDelete(req.params.id);
+
+      if (!deletedEvent) {
+        return res.status(404).json({ message: "Event not found" });
+      }
+
+      logger.info("[EVENT] Event deleted");
+      res.json({ message: "Event deleted successfully" });
+    } catch (err) {
+      logger.error("[EVENT] Error deleting event: %o", err);
+      sendSafeError(res, 500, "Error deleting event", process.env.NODE_ENV === "development");
+    }
   }
-});
+);
 
 export default router;

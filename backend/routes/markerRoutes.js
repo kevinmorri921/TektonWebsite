@@ -1,7 +1,10 @@
 import express from "express";
 import Marker from "../models/marker.js";
-import auth from "../middleware/auth.js";          // normal login auth
-import roleAuth from "../middleware/roleAuth.js"; // NEW middleware
+import auth from "../middleware/auth.js";
+import roleAuth from "../middleware/roleAuth.js";
+import logger from "../logger.js";
+import { validationSchemas, handleValidationErrors, sanitizeInput, sendSafeError } from "../middleware/validation.js";
+import { body } from "express-validator";
 
 const router = express.Router();
 
@@ -20,7 +23,7 @@ router.get("/", auth, async (req, res) => {
 });
 
 // GET single marker by ID
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", auth, validationSchemas.mongoId, handleValidationErrors, async (req, res) => {
   try {
     const marker = await Marker.findById(req.params.id);
 
@@ -37,10 +40,10 @@ router.get("/:id", auth, async (req, res) => {
       _id: marker._id,
       latitude: marker.latitude,
       longitude: marker.longitude,
-      name: latestSurvey.name || "Unnamed Survey",
+      name: sanitizeInput.escapeHtml(latestSurvey.name || "Unnamed Survey"),
       createdAt: latestSurvey.createdAt || marker.createdAt,
-      radioOne: latestSurvey.radioOne || "N/A",
-      radioTwo: latestSurvey.radioTwo || "N/A",
+      radioOne: sanitizeInput.escapeHtml(latestSurvey.radioOne || "N/A"),
+      radioTwo: sanitizeInput.escapeHtml(latestSurvey.radioTwo || "N/A"),
       lineLength: latestSurvey.lineLength || "N/A",
       lineIncrement: latestSurvey.lineIncrement || "N/A",
       surveyValues: latestSurvey.surveyValues || [],
@@ -48,7 +51,8 @@ router.get("/:id", auth, async (req, res) => {
 
     res.json(formattedMarker);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching marker details", error });
+    logger.error("[MARKER] Error fetching marker details: %o", error);
+    sendSafeError(res, 500, "Error fetching marker details", process.env.NODE_ENV === "development");
   }
 });
 
@@ -61,10 +65,18 @@ router.get("/:id", auth, async (req, res) => {
 router.post(
   "/",
   auth,
-  roleAuth(["encoder", "admin"]), // researcher cannot upload
+  roleAuth(["encoder", "admin"]),
+  // Input validation for marker coordinates and survey fields
+  validationSchemas.latitude,
+  validationSchemas.longitude,
+  body("name").optional().trim().isLength({ max: 255 }).withMessage("Marker name too long"),
+  handleValidationErrors,
   async (req, res) => {
     try {
       const { latitude, longitude, ...survey } = req.body;
+
+      // Sanitize survey data
+      const sanitizedSurvey = sanitizeInput.sanitizeObject(survey);
 
       const marker = await Marker.findOne({
         latitude: { $gte: latitude - 0.000001, $lte: latitude + 0.000001 },
@@ -73,11 +85,11 @@ router.post(
 
       if (marker) {
         const isDuplicate = marker.surveys.some(
-          (s) => s.name === survey.name && s.createdAt === survey.createdAt
+          (s) => s.name === sanitizedSurvey.name && s.createdAt === sanitizedSurvey.createdAt
         );
 
         if (!isDuplicate) {
-          marker.surveys.push(survey);
+          marker.surveys.push(sanitizedSurvey);
           await marker.save();
         }
 
@@ -86,13 +98,15 @@ router.post(
         const newMarker = new Marker({
           latitude,
           longitude,
-          surveys: [survey],
+          surveys: [sanitizedSurvey],
         });
         const savedMarker = await newMarker.save();
+        logger.info("[MARKER] New marker created by user=%s", req.user?.id);
         return res.status(201).json(savedMarker);
       }
     } catch (error) {
-      res.status(400).json({ message: "Error saving marker", error });
+      logger.error("[MARKER] Error saving marker: %o", error);
+      sendSafeError(res, 400, "Error saving marker", process.env.NODE_ENV === "development");
     }
   }
 );
@@ -102,16 +116,28 @@ router.put(
   "/:id",
   auth,
   roleAuth(["encoder", "admin"]),
+  validationSchemas.mongoId,
+  handleValidationErrors,
   async (req, res) => {
     try {
+      // Sanitize input before update
+      const sanitizedData = sanitizeInput.sanitizeObject(req.body);
+
       const updatedMarker = await Marker.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        sanitizedData,
         { new: true, runValidators: true }
       );
+
+      if (!updatedMarker) {
+        return res.status(404).json({ message: "Marker not found" });
+      }
+
+      logger.info("[MARKER] Marker updated by user=%s", req.user?.id);
       res.json(updatedMarker);
     } catch (error) {
-      res.status(400).json({ message: "Error updating marker", error });
+      logger.error("[MARKER] Error updating marker: %o", error);
+      sendSafeError(res, 400, "Error updating marker", process.env.NODE_ENV === "development");
     }
   }
 );
@@ -121,12 +147,21 @@ router.delete(
   "/:id",
   auth,
   roleAuth(["encoder", "admin"]),
+  validationSchemas.mongoId,
+  handleValidationErrors,
   async (req, res) => {
     try {
-      await Marker.findByIdAndDelete(req.params.id);
+      const deletedMarker = await Marker.findByIdAndDelete(req.params.id);
+
+      if (!deletedMarker) {
+        return res.status(404).json({ message: "Marker not found" });
+      }
+
+      logger.info("[MARKER] Marker deleted by user=%s", req.user?.id);
       res.json({ message: "Marker deleted successfully" });
     } catch (error) {
-      res.status(500).json({ message: "Error deleting marker", error });
+      logger.error("[MARKER] Error deleting marker: %o", error);
+      sendSafeError(res, 500, "Error deleting marker", process.env.NODE_ENV === "development");
     }
   }
 );

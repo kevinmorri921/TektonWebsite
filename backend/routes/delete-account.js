@@ -3,6 +3,7 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
 import logger from "../logger.js";
+import { sendSafeError } from "../middleware/validation.js";
 
 const router = express.Router();
 
@@ -55,11 +56,7 @@ router.delete("/", async (req, res) => {
 
   } catch (error) {
     logger.error("[DELETE-ACCOUNT] Server error: %o", error);
-    res.status(500).json({
-      success: false,
-      message: "Server error. Please try again later.",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
-    });
+    sendSafeError(res, 500, "Server error. Please try again later.", process.env.NODE_ENV === "development");
   }
 });
 

@@ -1,7 +1,11 @@
+import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import User from '../models/user.js';
 import connectDB from '../config/db.js';
 import logger from '../logger.js';
+
+// Load environment variables
+dotenv.config();
 
 const createSuperAdmin = async () => {
     try {
