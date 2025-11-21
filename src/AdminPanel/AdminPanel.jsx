@@ -54,24 +54,36 @@ const AdminPanel = () => {
     
     try {
       const token = localStorage.getItem('token');
+      
+      // First, update email/fullname/password
       const response = await axios.put(
-        `http://localhost:5000/api/admin/users/${editingUser._id}/role`,
+        `http://localhost:5000/api/admin/users/${editingUser._id}`,
         {
           email: editFormData.email.trim(),
           fullname: editFormData.fullname.trim(),
-          role: editFormData.role, 
           ...(editFormData.password ? { password: editFormData.password } : {})
         },
-          { headers: { Authorization: `Bearer ${token}` } }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
+
+      // Then, update role if it changed
+      let updatedUserData = response.data.user;
+      if (editFormData.role && editFormData.role !== editingUser.role) {
+        const roleResponse = await axios.put(
+          `http://localhost:5000/api/admin/users/${editingUser._id}/role`,
+          { role: editFormData.role },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        updatedUserData = roleResponse.data.user;
+      }
 
       // Update local state
       const updatedUsers = users.map(user =>
-        user._id === editingUser._id ? { ...user, ...response.data.user } : user
-    );
+        user._id === editingUser._id ? { ...user, ...updatedUserData } : user
+      );
       setUsers(updatedUsers);
       setFilteredUsers(prev => prev.map(user =>
-        user._id === editingUser._id ? { ...user, ...response.data.user } : user
+        user._id === editingUser._id ? { ...user, ...updatedUserData } : user
       ));
 
       // Close modal and show success message

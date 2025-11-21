@@ -35,8 +35,13 @@ export const validationSchemas = {
     .isIn(["SUPER_ADMIN", "admin", "encoder", "researcher"])
     .withMessage("Invalid role specified"),
 
-  // MongoDB ObjectId validation
+  // MongoDB ObjectId validation (for 'id' param)
   mongoId: param("id")
+    .matches(/^[0-9a-fA-F]{24}$/)
+    .withMessage("Invalid ID format"),
+
+  // MongoDB ObjectId validation (for 'userId' param)
+  mongoIdUserId: param("userId")
     .matches(/^[0-9a-fA-F]{24}$/)
     .withMessage("Invalid ID format"),
 

@@ -41,28 +41,29 @@ function Analytics() { // <-- receive userRole as prop
 
   const fetchMarkers = async () => {
     try {
-
       const token = localStorage.getItem("token");
-    if (!token) return alert("You are not logged in.");
+      if (!token) return alert("You are not logged in.");
 
-     const res = await axios.get(API_URL, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const res = await axios.get(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-      setSurveyData(res.data);
+      setSurveyData(res.data || []);
 
-      if (res.data.length > 0 && mapRef.current) {
+      // Auto-pan and zoom to the latest marker
+      if (res.data && res.data.length > 0 && mapRef.current) {
         const latestIndex = res.data.length - 1;
         const latest = res.data[latestIndex];
-        const lat = latest.latitude ?? latest.lat;
-        const lng = latest.longitude ?? latest.lng;
-        if (lat && lng) {
-          mapRef.current.setView([lat, lng], 14);
+        const lat = parseFloat(latest.latitude ?? latest.lat);
+        const lng = parseFloat(latest.longitude ?? latest.lng);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          // Use setView with zoom level 15 to center and zoom to latest marker
+          mapRef.current.setView([lat, lng], 15);
           setCurrentMarkerIndex(latestIndex);
         }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load markers:', err);
       alert("Failed to load markers!");
     }
   };
@@ -103,13 +104,21 @@ function Analytics() { // <-- receive userRole as prop
   useEffect(() => { if (!markersRef.current) return; renderMarkers(surveyData); }, [surveyData]);
 
   const renderMarkers = (data) => {
+    if (!markersRef.current) return;
+    
     markersRef.current.clearLayers();
-    data.forEach((point) => {
-      const lat = point.latitude ?? point.lat;
-      const lng = point.longitude ?? point.lng;
-      if (!lat || !lng) return;
+    
+    if (!Array.isArray(data) || data.length === 0) return;
+    
+    data.forEach((point, index) => {
+      const lat = parseFloat(point.latitude ?? point.lat);
+      const lng = parseFloat(point.longitude ?? point.lng);
+      
+      // Skip invalid coordinates
+      if (isNaN(lat) || isNaN(lng)) return;
 
       const marker = L.marker([lat, lng]);
+      
       marker.on("click", (e) => {
         activeMarkerLatLng.current = e.latlng;
         mapRef.current.panTo(e.latlng);
@@ -120,6 +129,7 @@ function Analytics() { // <-- receive userRole as prop
         setShowSurveyList(true);
         setShowSurveyDetails(false);
       });
+      
       markersRef.current.addLayer(marker);
     });
   };

@@ -27,7 +27,7 @@ router.get('/users', adminAuth, async (req, res) => {
 router.delete(
   '/users/:userId',
   adminAuth,
-  validationSchemas.mongoId,
+  validationSchemas.mongoIdUserId,
   handleValidationErrors,
   async (req, res) => {
     try {
@@ -80,7 +80,7 @@ router.get('/overview', adminAuth, async (req, res) => {
 router.put(
   '/users/:userId/toggle-status',
   adminAuth,
-  validationSchemas.mongoId,
+  validationSchemas.mongoIdUserId,
   body('active').isBoolean().withMessage('Active must be a boolean'),
   handleValidationErrors,
   async (req, res) => {
@@ -118,7 +118,7 @@ router.put(
 router.put(
   '/users/:userId',
   adminAuth,
-  validationSchemas.mongoId,
+  validationSchemas.mongoIdUserId,
   validationSchemas.email,
   validationSchemas.fullname,
   body('password').optional().trim().isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
@@ -171,7 +171,7 @@ router.put(
 router.put(
   '/users/:userId/role',
   adminAuth,
-  validationSchemas.mongoId,
+  validationSchemas.mongoIdUserId,
   validationSchemas.role,
   handleValidationErrors,
   async (req, res) => {
@@ -185,7 +185,7 @@ router.put(
       return res.status(400).json({ message: 'Role is required' });
     }
 
-    // Make sure enum matches your Mongoose schema
+    // Make sure enum matches your Mongoose schema, but don't allow SUPER_ADMIN changes
     const allowedRoles = ["admin", "encoder", "researcher"];
     if (!allowedRoles.includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
