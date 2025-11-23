@@ -667,11 +667,11 @@ const AdminPanel = () => {
                         </td>
                         <td className="py-4 px-6">
                           <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            user.active 
+                            user.isEnabled !== false
                               ? 'bg-green-100 text-green-700' 
-                              : 'bg-gray-200 text-gray-700'
+                              : 'bg-red-100 text-red-700'
                           }`}>
-                            {user.active ? 'Active' : 'Inactive'}
+                            {user.isEnabled !== false ? 'Active' : 'Deactivated'}
                           </span>
                         </td>
                         <td className="py-4 px-6 text-gray-700">
@@ -714,15 +714,16 @@ const AdminPanel = () => {
                               className={`flex items-center space-x-1 ${
                                 user.email === 'super_admin@tekton.com'
                                   ? 'text-gray-400 cursor-not-allowed'
-                                  : user.active
+                                  : user.isEnabled !== false
                                   ? 'text-yellow-600 hover:text-yellow-700 hover:bg-yellow-50'
                                   : 'text-green-600 hover:text-green-700 hover:bg-green-50'
                               } transition-all rounded px-2 py-1`}
                               onClick={() => {
                                 if (user.email === 'super_admin@tekton.com') return;
-                                toggleUserStatus(user._id, user.active);
+                                toggleUserStatus(user._id, user.isEnabled);
                               }}
                               disabled={user.email === 'super_admin@tekton.com'}
+                              title={user.email === 'super_admin@tekton.com' ? 'Cannot modify super admin' : ''}
                             >
                               <svg
                                 className="w-4 h-4"
@@ -734,12 +735,12 @@ const AdminPanel = () => {
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth="2"
-                                  d={user.active 
+                                  d={user.isEnabled !== false
                                     ? "M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
                                     : "M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"}
                                 />
                               </svg>
-                              <span>{user.active ? 'Deactivate' : 'Activate'}</span>
+                              <span>{user.isEnabled !== false ? 'Deactivate' : 'Activate'}</span>
                             </button>
 
                             {/* Delete Button */}

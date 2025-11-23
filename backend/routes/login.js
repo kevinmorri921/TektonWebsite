@@ -46,6 +46,12 @@ router.post(
       return res.status(400).json({ success: false, message: "Invalid password" });
     }
 
+    // ✅ Check if user account is enabled (not deactivated by admin)
+    if (user.isEnabled === false) {
+      logger.warn("[LOGIN] Failed login - account deactivated for email=%s from=%s", email, req.ip);
+      return res.status(403).json({ success: false, message: "Your account has been deactivated by the administrator. Please contact support." });
+    }
+
     // ✅ Update last login AFTER successful login
     user.lastLoginAt = new Date();
     await user.save();
