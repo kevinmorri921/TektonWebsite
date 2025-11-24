@@ -7,6 +7,9 @@ import { validationSchemas, handleValidationErrors, sanitizeInput, sendSafeError
 
 const router = express.Router();
 
+// Allowed roles for profile access
+const ALLOWED_ROLES = ["SUPER_ADMIN", "admin", "encoder", "researcher"];
+
 router.post(
   "/",
   // Input validation
@@ -33,7 +36,7 @@ router.post(
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      logger.info("[UPDATE-PROFILE] Token verified for userId=%s", decoded.id);
+      logger.info("[UPDATE-PROFILE] Token verified for userId=%s", decoded.userId);
     } catch (error) {
       logger.warn("[UPDATE-PROFILE] Invalid token from %s", req.ip);
       return res.status(401).json({
@@ -42,7 +45,26 @@ router.post(
       });
     }
 
-    // 3️⃣ Validate request body
+    // 3️⃣ Find user and check role
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      logger.warn("[UPDATE-PROFILE] User not found userId=%s", decoded.userId);
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // 4️⃣ Check if user has allowed role
+    if (!ALLOWED_ROLES.includes(user.role)) {
+      logger.warn("[UPDATE-PROFILE] Unauthorized role access for userId=%s role=%s", decoded.userId, user.role);
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to update profile settings",
+      });
+    }
+
+    // 5️⃣ Validate request body
     if (!fullname || fullname.trim() === "") {
       logger.warn("[UPDATE-PROFILE] Missing fullname for userId=%s", decoded.id);
       return res.status(400).json({
@@ -51,23 +73,13 @@ router.post(
       });
     }
 
-    // 4️⃣ Find user and update
-    const user = await User.findById(decoded.id);
-    if (!user) {
-      logger.warn("[UPDATE-PROFILE] User not found userId=%s", decoded.id);
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // 5️⃣ Update user name
+    // 6️⃣ Update user name
     user.fullname = sanitizeInput.removeXSS(fullname.trim());
     await user.save();
 
     logger.info("✅ [UPDATE-PROFILE] Name updated successfully for user=%s userId=%s", user.email, user._id);
 
-    // 6️⃣ Success response
+    // 7️⃣ Success response
     res.status(200).json({
       success: true,
       message: "Profile updated successfully",

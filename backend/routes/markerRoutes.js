@@ -22,6 +22,17 @@ router.get("/", auth, async (req, res) => {
   }
 });
 
+// GET marker count (stats)
+router.get("/stats/count", auth, async (req, res) => {
+  try {
+    const count = await Marker.countDocuments();
+    res.json({ totalMarkers: count });
+  } catch (error) {
+    logger.error("[MARKER] Error fetching marker count: %o", error);
+    sendSafeError(res, 500, "Error fetching marker count", process.env.NODE_ENV === "development");
+  }
+});
+
 // GET single marker by ID
 router.get("/:id", auth, validationSchemas.mongoId, handleValidationErrors, async (req, res) => {
   try {

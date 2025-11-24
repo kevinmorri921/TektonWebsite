@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import bgImage from "../assets/db-pic.jpg";
-import { Home, BarChart3, Settings, User, LogOut, Pencil, Key, Trash2, AlertTriangle } from "lucide-react";
+import { Home, BarChart3, Settings, User, LogOut, Pencil, Key, Trash2, AlertTriangle, Lock } from "lucide-react";
 import { motion } from "framer-motion";
 
 const Profile = () => {
@@ -12,6 +12,37 @@ const Profile = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState({ name: false, password: false, delete: false });
+  const [userRole, setUserRole] = useState("");
+  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // Allowed roles for profile access
+  const ALLOWED_ROLES = ["SUPER_ADMIN", "admin", "encoder", "researcher"];
+
+  // Check user role and authorization
+  useEffect(() => {
+    const checkAuthorization = () => {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+        const role = currentUser.role || "";
+        
+        setUserRole(role);
+        
+        // Check if user role is in allowed list
+        if (ALLOWED_ROLES.includes(role)) {
+          setIsAuthorized(true);
+        } else {
+          setIsAuthorized(false);
+          setMessage("⛔ You do not have permission to access profile settings.");
+        }
+      } catch (error) {
+        console.error("Error checking authorization:", error);
+        setIsAuthorized(false);
+        navigate("/dashboard");
+      }
+    };
+
+    checkAuthorization();
+  }, [navigate]);
 
   const handleUpdateName = async (e) => {
     e.preventDefault();
@@ -120,6 +151,33 @@ const Profile = () => {
 
   const storedName = localStorage.getItem("fullname") || "User";
 
+  // Show authorization error message
+  if (!isAuthorized) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-red-50 to-red-100">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }} 
+          animate={{ opacity: 1, scale: 1 }} 
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-2xl shadow-2xl p-8 max-w-md text-center border border-red-200"
+        >
+          <Lock size={48} className="mx-auto text-red-600 mb-4" />
+          <h2 className="text-2xl font-bold text-red-700 mb-2">Access Denied</h2>
+          <p className="text-gray-600 mb-6">You do not have permission to access profile settings.</p>
+          <p className="text-sm text-gray-500 mb-6">Allowed roles: Super Admin, Admin, Encoder, Researcher</p>
+          <p className="text-sm text-gray-700 mb-6">Current role: <span className="font-semibold text-blue-600">{userRole || "Unknown"}</span></p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            onClick={() => navigate("/dashboard")}
+            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition font-medium"
+          >
+            Return to Dashboard
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="h-screen w-screen flex items-center justify-center overflow-hidden"
@@ -143,9 +201,16 @@ const Profile = () => {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="w-[250px] bg-[#F8F9FA] flex flex-col py-6 px-6 rounded-l-[2rem]"
         >
-          <p className="text-xl font-semibold italic text-center text-gray-800 mb-8 mt-6">
+          <p className="text-xl font-semibold italic text-center text-gray-800 mb-4 mt-6">
             Hi, <span className="font-bold">{storedName}</span>!
           </p>
+
+          {/* Role Badge */}
+          <div className="mb-6 text-center">
+            <span className="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded-full">
+              Role: {userRole.replace("_", " ")}
+            </span>
+          </div>
 
           <nav className="space-y-5">
             <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/dashboard")} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-[#303345] font-medium"> <Home size={18} /> Dashboard </motion.button>
@@ -205,7 +270,7 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }} 
                   type="submit" 
                   disabled={loading.name || !fullname.trim()}
-                  className="w-full bg-[#303345] text-black py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
+                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
                 >
                   {loading.name ? "Updating..." : "Update"}
                 </motion.button>
@@ -234,7 +299,7 @@ const Profile = () => {
                   whileHover={{ scale: 1.05 }} 
                   type="submit" 
                   disabled={loading.password || !currentPassword || !newPassword}
-                  className="w-full bg-[#303345] text-black py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
+                  className="w-full bg-[#303345] text-white py-2 rounded-lg hover:opacity-90 disabled:opacity-90"
                 >
                   {loading.password ? "Changing..." : "Change Password"}
                 </motion.button>
@@ -251,7 +316,7 @@ const Profile = () => {
                 whileHover={{ scale: 1.05 }} 
                 onClick={handleDeleteAccount} 
                 disabled={loading.delete}
-                className="w-full bg-red-600 text-black py-2 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-50"
               > 
                 {loading.delete ? "Deleting..." : <><Trash2 size={18} /> Delete Account</>}
               </motion.button>

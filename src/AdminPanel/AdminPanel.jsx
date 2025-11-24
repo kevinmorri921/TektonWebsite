@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import bgImage from '../assets/db-pic.jpg';
-import { BarChart3, Settings, User, LogOut, Users, Shield } from 'lucide-react';
+import { BarChart3, Settings, User, LogOut, Users, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
+import EventLog from '../EventLog/EventLog';
 
 const AdminPanel = () => {
   const [adminInfo, setAdminInfo] = useState({
@@ -16,10 +17,9 @@ const AdminPanel = () => {
     totalUsers: 0,
     activeUsers: 0,
     newUsersToday: 0,
+    totalUploadedMarkers: 0,
     systemStatus: 'healthy'
   });
-  const [showLoginHistory, setShowLoginHistory] = useState(false);
-  const [loginHistory, setLoginHistory] = useState([]);
   const [users, setUsers] = useState([]);
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [showUsers, setShowUsers] = useState(false);
@@ -33,6 +33,7 @@ const AdminPanel = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [editFormData, setEditFormData] = useState({ email: '', fullname: '', password: '', role: '' });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [currentView, setCurrentView] = useState('users'); // 'users', 'eventlog' - User Management is default
   const navigate = useNavigate();
 
   // Reset form when modal closes
@@ -166,8 +167,6 @@ const AdminPanel = () => {
       const token = localStorage.getItem('token');
       const newStatus = !currentStatus;
 
-      console.log('Toggling user status:', { userId, currentStatus, newStatus });
-
       const response = await axios.put(
         `http://localhost:5000/api/admin/users/${userId}/toggle-status`,
         { 
@@ -181,18 +180,25 @@ const AdminPanel = () => {
         }
       );
 
-      console.log('Server response:', response.data);
+      // Extract the updated user from response
+      const updatedUserData = response.data.user;
 
-      // Update local state
+      // Update local state with the new isEnabled value
       const updatedUsers = users.map(user => 
-        user._id === userId ? { ...user, active: newStatus } : user
+        user._id === userId ? { ...user, isEnabled: updatedUserData.isEnabled } : user
       );
       setUsers(updatedUsers);
-      setFilteredUsers(prevFiltered => 
-        prevFiltered.map(user => 
-          user._id === userId ? { ...user, active: newStatus } : user
-        )
+      
+      const updatedFiltered = filteredUsers.map(user => 
+        user._id === userId ? { ...user, isEnabled: updatedUserData.isEnabled } : user
       );
+      setFilteredUsers(updatedFiltered);
+
+      // Update stats - recalculate active users
+      const activeCount = updatedUsers.filter(
+        user => (user.lastLoginAt && (Date.now() - new Date(user.lastLoginAt).getTime()) < ONLINE_WINDOW_MS)
+      ).length;
+      setStats(prev => ({ ...prev, activeUsers: activeCount }));
 
       // Show success notification
       const notification = document.createElement('div');
@@ -202,7 +208,7 @@ const AdminPanel = () => {
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
-          <span>Account ${!currentStatus ? 'activated' : 'deactivated'} successfully</span>
+          <span>Account ${newStatus ? 'activated' : 'deactivated'} successfully</span>
         </div>
       `;
       document.body.appendChild(notification);
@@ -354,7 +360,17 @@ const AdminPanel = () => {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
-        setStats(statsResponse.data);
+        // Fetch marker count
+        const markerResponse = await axios.get('http://localhost:5000/api/markers/stats/count', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        setStats(prev => ({
+          ...prev,
+          ...statsResponse.data,
+          totalUploadedMarkers: markerResponse.data.totalMarkers
+        }));
+        
         // Also fetch full user list so we can display accurate total users
         try {
           await fetchUsers();
@@ -421,22 +437,22 @@ const AdminPanel = () => {
               <nav className="space-y-5">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
-                  onClick={() => setShowUsers(false)}
-                  className={`flex items-center gap-3 ${!showUsers ? 'bg-[#303345] text-white shadow-lg' : 'bg-[#F8F9FA] hover:bg-gray-100 text-[#303345]'} px-4 py-2 w-full rounded-xl text-left font-medium transition`}
-                >
-                  <Shield size={18} /> Dashboard
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
                   onClick={() => {
-                    setShowUsers(true);
+                    setCurrentView('users');
                     if (!users.length) {
                       fetchUsers();
                     }
                   }}
-                  className={`flex items-center gap-3 ${showUsers ? 'bg-[#303345] text-white shadow-lg' : 'bg-[#F8F9FA] hover:bg-gray-100 text-[#303345]'} px-4 py-2 w-full rounded-xl text-left font-medium transition`}
+                  className={`flex items-center gap-3 ${currentView === 'users' ? 'bg-[#303345] text-white shadow-lg' : 'bg-[#F8F9FA] hover:bg-gray-100 text-[#303345]'} px-4 py-2 w-full rounded-xl text-left font-medium transition`}
                 >
                   <Users size={18} /> User Management
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  onClick={() => setCurrentView('eventlog')}
+                  className={`flex items-center gap-3 ${currentView === 'eventlog' ? 'bg-[#303345] text-white shadow-lg' : 'bg-[#F8F9FA] hover:bg-gray-100 text-[#303345]'} px-4 py-2 w-full rounded-xl text-left font-medium transition`}
+                >
+                  <FileText size={18} /> Event Log
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -528,32 +544,16 @@ const AdminPanel = () => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="bg-white rounded-2xl shadow-md p-6 cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => setShowLoginHistory(true)}
+              className="bg-white rounded-2xl shadow-md p-6"
             >
-      <h3 className="text-gray-600 text-sm font-medium">Login Activity</h3>
-            <div className="mt-4 space-y-2">
-              {users
-                .filter(user => user.lastLoginAt) // Only show users who have logged in
-                .sort((a, b) => new Date(b.lastLoginAt) - new Date(a.lastLoginAt)) // Sort by most recent login
-                .slice(0, 3) // Take only the 3 most recent
-                .map(user => (
-                  <div 
-                    key={user._id} 
-                    className="flex items-center space-x-2 text-sm opacity-70 hover:opacity-100 transition-opacity"
-                    title={`Last login: ${new Date(user.lastLoginAt).toLocaleString()}`}
-                  >
-                    <div className="w-2 h-2 rounded-full bg-green-400"></div>
-                    <span className="text-[#303345] truncate">{user.email}</span>
-                  </div>
-                ))}
-            </div>
-            <div className="mt-2 text-purple-600 text-sm">Click to view all</div>
+              <h3 className="text-gray-600 text-sm font-medium">Total Uploaded Markers</h3>
+              <p className="text-3xl font-bold mt-2 text-[#303345]">{stats.totalUploadedMarkers}</p>
+              <div className="mt-2 text-purple-600 text-sm">↑ Survey locations</div>
             </motion.div>
           </div>
 
-        {/* User List Section */}
-        {showUsers && (
+        {/* Conditional Content Rendering */}
+        {currentView === 'users' && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -791,6 +791,18 @@ const AdminPanel = () => {
           </motion.div>
         )}
 
+        {/* Event Log Section */}
+        {currentView === 'eventlog' && (
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="mt-8 bg-transparent"
+          >
+            <EventLog />
+          </motion.div>
+        )}
+
         {/* Edit User Modal */}
         {isEditModalOpen && (
           <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
@@ -888,70 +900,6 @@ const AdminPanel = () => {
           </div>
         )}
 
-        {/* Login History Modal */}
-        {showLoginHistory && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm"></div>
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-xl"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-[#303345]">Login History</h2>
-                <button
-                  onClick={() => setShowLoginHistory(false)}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="max-h-[60vh] overflow-y-auto">
-                <table className="w-full">
-                  <thead className="sticky top-0 bg-white">
-                    <tr className="text-left text-gray-700 text-sm border-b border-gray-200">
-                      <th className="py-3 px-4">User</th>
-                      <th className="py-3 px-4">Last Activity</th>
-                      <th className="py-3 px-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map(user => (
-                      <tr key={user._id} className="border-b border-gray-200 hover:bg-gray-50">
-                        <td className="py-3 px-4">
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-2 h-2 rounded-full ${user.isEnabled ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                            <span className="text-[#303345]">{user.email}</span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-gray-600">
-                          {user.lastLoginAt 
-                            ? new Date(user.lastLoginAt).toLocaleString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })
-                            : 'Never logged in'}
-                        </td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            user.isEnabled ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                          }`}>
-                            {user.isEnabled ? 'Active' : 'Suspended'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </motion.div>
-          </div>
-        )}
         </motion.main>
       </motion.div>
     </div>

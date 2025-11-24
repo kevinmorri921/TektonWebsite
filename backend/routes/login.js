@@ -2,6 +2,7 @@ import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/user.js";
+import ActivityLog from "../models/activityLog.js";
 import logger, { scrub } from "../logger.js";
 import { validationSchemas, handleValidationErrors, sendSafeError } from "../middleware/validation.js";
 
@@ -55,6 +56,20 @@ router.post(
     // ✅ Update last login AFTER successful login
     user.lastLoginAt = new Date();
     await user.save();
+
+    // ✅ Log login activity to ActivityLog
+    try {
+      await ActivityLog.create({
+        username: user.fullname || user.email.split('@')[0],
+        email: user.email,
+        action: "Login",
+        details: `Logged in from ${req.ip}`,
+        userId: user._id
+      });
+    } catch (logError) {
+      logger.error("[LOGIN] Failed to log activity: %o", logError);
+      // Don't fail the login if activity logging fails
+    }
 
     // ✅ Include role in JWT
     const token = jwt.sign({ userId: user._id, role: user.role }, JWT_SECRET, { expiresIn: "1d" });

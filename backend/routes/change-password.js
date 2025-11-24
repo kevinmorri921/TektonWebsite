@@ -9,9 +9,12 @@ import { validationSchemas, handleValidationErrors, sendSafeError } from "../mid
 
 const router = express.Router();
 
+// Allowed roles for profile access
+const ALLOWED_ROLES = ["SUPER_ADMIN", "admin", "encoder", "researcher"];
+
 /**
  * 🧩 POST /api/auth/change-password
- * Handles password change with authentication
+ * Handles password change with authentication and role-based authorization
  */
 router.post(
   "/",
@@ -20,7 +23,12 @@ router.post(
     .trim()
     .isLength({ min: 1 })
     .withMessage("Current password is required"),
-  validationSchemas.password, // Re-use password validation for new password
+  body("newPassword")
+    .trim()
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters")
+    .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/)
+    .withMessage("Password must contain uppercase, lowercase, number, and special character"),
   handleValidationErrors,
   async (req, res) => {
   logger.info("[CHANGE-PASSWORD] Incoming request from %s", req.ip);
@@ -43,7 +51,7 @@ router.post(
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET);
-      logger.info("[CHANGE-PASSWORD] Token verified for userId=%s", decoded.id);
+      logger.info("[CHANGE-PASSWORD] Token verified for userId=%s", decoded.userId);
     } catch (error) {
       logger.warn("[CHANGE-PASSWORD] Invalid token from %s", req.ip);
       return res.status(401).json({
@@ -52,26 +60,35 @@ router.post(
       });
     }
 
-    // 3️⃣ Validate request body
-    if (!currentPassword || !newPassword) {
-      logger.warn("[CHANGE-PASSWORD] Missing passwords for userId=%s", decoded.id);
-      return res.status(400).json({
-        success: false,
-        message: "Current password and new password are required",
-      });
-    }
-
-    // 4️⃣ Find user
-    const user = await User.findById(decoded.id);
+    // 3️⃣ Find user
+    const user = await User.findById(decoded.userId);
     if (!user) {
-      logger.warn("[CHANGE-PASSWORD] User not found userId=%s", decoded.id);
+      logger.warn("[CHANGE-PASSWORD] User not found userId=%s", decoded.userId);
       return res.status(404).json({
         success: false,
         message: "User not found",
       });
     }
 
-    // 5️⃣ Verify current password
+    // 4️⃣ Check if user has allowed role
+    if (!ALLOWED_ROLES.includes(user.role)) {
+      logger.warn("[CHANGE-PASSWORD] Unauthorized role access for userId=%s role=%s", decoded.userId, user.role);
+      return res.status(403).json({
+        success: false,
+        message: "You do not have permission to change password",
+      });
+    }
+
+    // 5️⃣ Validate request body
+    if (!currentPassword || !newPassword) {
+      logger.warn("[CHANGE-PASSWORD] Missing passwords for userId=%s", decoded.userId);
+      return res.status(400).json({
+        success: false,
+        message: "Current password and new password are required",
+      });
+    }
+
+    // 6️⃣ Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       logger.warn("[CHANGE-PASSWORD] Incorrect current password attempt for user=%s from=%s", user.email, req.ip);
@@ -81,17 +98,17 @@ router.post(
       });
     }
 
-    // 6️⃣ Hash new password
+    // 7️⃣ Hash new password
     const saltRounds = 10;
     const hashedNewPassword = await bcrypt.hash(newPassword, saltRounds);
 
-    // 7️⃣ Update user password
+    // 8️⃣ Update user password
     user.password = hashedNewPassword;
     await user.save();
 
     logger.info("[CHANGE-PASSWORD] Password updated successfully for user=%s", user.email);
 
-    // 8️⃣ Success response
+    // 9️⃣ Success response
     res.status(200).json({
       success: true,
       message: "Password changed successfully",

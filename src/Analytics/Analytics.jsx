@@ -173,11 +173,36 @@ async function handleFileUpload(e) {
   if (!newPoints.length) return alert("No valid coordinates found to upload.");
 
   try {
+    const uploadedMarkerCount = newPoints.length;
     for (const p of newPoints) {
       await axios.post("http://localhost:5000/api/markers", p, {
         headers: { Authorization: `Bearer ${token}` },
       });
     }
+    
+    // Log activity
+    try {
+      const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+      const markerNames = newPoints.map((p) => p.name || "Unnamed").slice(0, 3).join(", ");
+      const detailsText = newPoints.length > 3 
+        ? `${markerNames}, and ${newPoints.length - 3} more` 
+        : markerNames;
+      
+      await axios.post(
+        "http://localhost:5000/api/activity-log",
+        {
+          action: "Uploaded Marker",
+          details: `Uploaded ${uploadedMarkerCount} marker(s): ${detailsText}`,
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+    } catch (logErr) {
+      console.error("Failed to log activity:", logErr);
+      // Don't fail the upload if logging fails
+    }
+    
     await fetchMarkers();
     alert("Coordinates uploaded successfully!");
   } catch (err) {
@@ -200,11 +225,29 @@ async function handleFileUpload(e) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${selectedDetails.name || "survey"}.json`;
+    const filename = `${selectedDetails.name || "survey"}.json`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
+
+    // Log activity (fire and forget)
+    const token = localStorage.getItem("token");
+    if (token) {
+      axios
+        .post(
+          "http://localhost:5000/api/activity-log",
+          {
+            action: "Downloaded File",
+            details: `Downloaded survey: ${filename}`,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        )
+        .catch((err) => console.error("Failed to log download activity:", err));
+    }
   };
 
   const selectedDetails =
