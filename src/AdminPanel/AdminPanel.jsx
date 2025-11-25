@@ -481,7 +481,21 @@ const AdminPanel = () => {
               <div className="border-t border-gray-300" />
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                onClick={() => {
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token');
+                    // Call the logout endpoint to log the sign-out event
+                    await axios.post(
+                      'http://localhost:5000/api/logout',
+                      {},
+                      { headers: { Authorization: `Bearer ${token}` } }
+                    );
+                  } catch (error) {
+                    console.error('Failed to log logout event:', error);
+                    // Continue with logout even if logging fails
+                  }
+                  
+                  // Clear local storage and navigate to login
                   localStorage.clear();
                   navigate('/login');
                 }}

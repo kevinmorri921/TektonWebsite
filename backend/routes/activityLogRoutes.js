@@ -16,7 +16,7 @@ router.post(
   "/",
   auth,
   body("action")
-    .isIn(["Uploaded Marker", "Downloaded File", "Created Survey", "Updated Survey", "Deleted Marker"])
+    .isIn(["Uploaded Marker", "Downloaded File", "Created Survey", "Updated Survey", "Deleted Marker", "Sign Out"])
     .withMessage("Invalid action type"),
   body("details").optional().isString(),
   async (req, res) => {

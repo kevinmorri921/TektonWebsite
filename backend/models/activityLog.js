@@ -14,7 +14,7 @@ const activityLogSchema = new mongoose.Schema({
   },
   action: {
     type: String,
-    enum: ["Login", "Uploaded Marker", "Downloaded File", "Created Survey", "Updated Survey", "Deleted Marker"],
+    enum: ["Login", "Uploaded Marker", "Downloaded File", "Created Survey", "Updated Survey", "Deleted Marker", "Sign Out"],
     required: true,
     index: true
   },
@@ -26,6 +26,15 @@ const activityLogSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: false
+  },
+  role: {
+    type: String,
+    enum: ["SUPER_ADMIN", "admin", "encoder", "researcher"],
+    default: null
+  },
+  ipAddress: {
+    type: String,
+    default: null
   }
 }, { 
   timestamps: true 

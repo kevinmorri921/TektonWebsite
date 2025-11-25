@@ -142,7 +142,20 @@ const Profile = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // Call the logout endpoint to log the sign-out event
+      await axios.post(
+        'http://localhost:5000/api/logout',
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch (error) {
+      console.error('Failed to log logout event:', error);
+      // Continue with logout even if logging fails
+    }
+    
     localStorage.removeItem("token");
     localStorage.removeItem("fullname");
     localStorage.removeItem("email");

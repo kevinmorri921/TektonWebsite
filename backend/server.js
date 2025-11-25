@@ -10,6 +10,7 @@ import logger, { scrub } from "./logger.js";
 
 import authRoutes from "./routes/auth.js";
 import loginRoute from "./routes/login.js";
+import logoutRoute from "./routes/logout.js";
 import markerRoutes from "./routes/markerRoutes.js";
 import changePasswordRoute from "./routes/change-password.js";
 import updateProfileRoute from "./routes/update-profile.js";
@@ -104,6 +105,7 @@ app.use((req, res, next) => {
 // 🛣 API Routes
 app.use("/api", authRoutes);
 app.use("/api/login", loginRoute);
+app.use("/api/logout", logoutRoute);
 app.use("/api/markers", markerRoutes);
 app.use("/api/auth/change-password", changePasswordRoute);
 app.use("/api/auth/update-profile", updateProfileRoute);

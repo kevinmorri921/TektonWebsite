@@ -57,6 +57,7 @@ const EventLog = () => {
       (log) =>
         log.username?.toLowerCase().includes(query) ||
         log.email?.toLowerCase().includes(query) ||
+        log.role?.toLowerCase().includes(query) ||
         log.action?.toLowerCase().includes(query) ||
         log.details?.toLowerCase().includes(query)
     );
@@ -70,7 +71,7 @@ const EventLog = () => {
     }
 
     const csv = [
-      ['Date', 'Time', 'Username', 'Email', 'Action', 'Details'],
+      ['Date', 'Time', 'Username', 'Email', 'Role', 'Action', 'Details'],
       ...logs.map((log) => {
         const date = new Date(log.createdAt);
         return [
@@ -78,6 +79,7 @@ const EventLog = () => {
           date.toLocaleTimeString(),
           log.username,
           log.email,
+          log.role || '-',
           log.action,
           log.details || 'N/A',
         ];
@@ -100,6 +102,8 @@ const EventLog = () => {
     switch (action) {
       case 'Login':
         return 'bg-indigo-100 text-indigo-800';
+      case 'Sign Out':
+        return 'bg-slate-100 text-slate-800';
       case 'Uploaded Marker':
         return 'bg-blue-100 text-blue-800';
       case 'Downloaded File':
@@ -166,6 +170,7 @@ const EventLog = () => {
           >
             <option value="">All Actions</option>
             <option value="Login">Login</option>
+            <option value="Sign Out">Sign Out</option>
             <option value="Uploaded Marker">Uploaded Marker</option>
             <option value="Downloaded File">Downloaded File</option>
             <option value="Created Survey">Created Survey</option>
@@ -195,27 +200,28 @@ const EventLog = () => {
         </div>
       </div>
 
-      {/* Table */}
+      {/* Table with Scrollable Container */}
       {loading ? (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto overflow-y-auto max-h-[600px] border border-gray-200 rounded-xl">
           <table className="w-full">
-            <thead>
-              <tr className="text-left border-b border-gray-200">
-                <th className="pb-4 px-6 text-gray-600 font-medium">Date & Time</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium">Username</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium">Email</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium">Action</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium">Details</th>
+            <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
+              <tr className="text-left">
+                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[180px]">Date & Time</th>
+                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[140px]">Username</th>
+                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[160px]">Email</th>
+                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[100px]">Role</th>
+                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[130px]">Action</th>
+                <th className="pb-4 px-6 text-gray-600 font-medium min-w-[250px]">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredLogs.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="py-8 text-center text-gray-500">
+                  <td colSpan="6" className="py-8 text-center text-gray-500">
                     No activity logs found
                   </td>
                 </tr>
@@ -223,9 +229,9 @@ const EventLog = () => {
                 filteredLogs.map((log, index) => (
                   <tr
                     key={log._id || index}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="hover:bg-gray-50 transition-colors border-b border-gray-100"
                   >
-                    <td className="py-4 px-6 text-gray-800">
+                    <td className="py-4 px-6 text-gray-800 whitespace-nowrap min-w-[180px]">
                       {new Date(log.createdAt).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -235,18 +241,23 @@ const EventLog = () => {
                         second: '2-digit',
                       })}
                     </td>
-                    <td className="py-4 px-6 text-gray-700">
+                    <td className="py-4 px-6 text-gray-700 whitespace-nowrap min-w-[140px] truncate" title={log.username}>
                       {log.username}
                     </td>
-                    <td className="py-4 px-6 text-gray-600">
+                    <td className="py-4 px-6 text-gray-600 whitespace-nowrap min-w-[160px] truncate" title={log.email}>
                       {log.email}
                     </td>
-                    <td className="py-4 px-6">
+                    <td className="py-4 px-6 text-gray-600 whitespace-nowrap min-w-[100px]">
+                      <span className="inline-block px-2 py-1 bg-gray-200 rounded text-xs font-medium">
+                        {log.role || '-'}
+                      </span>
+                    </td>
+                    <td className="py-4 px-6 whitespace-nowrap min-w-[130px]">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${getActionBadgeColor(log.action)}`}>
                         {log.action}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-gray-600 max-w-xs truncate">
+                    <td className="py-4 px-6 text-gray-600 min-w-[250px] break-words max-h-20 overflow-y-auto" title={log.details || ''}>
                       {log.details || '-'}
                     </td>
                   </tr>
