@@ -33,6 +33,7 @@ router.post(
         username: user.fullname || user.email.split("@")[0],
         email: user.email,
         userId: user.id,
+        role: user.role || null,
         action,
         details: details || null,
       });

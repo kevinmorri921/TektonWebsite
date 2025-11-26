@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const surveyValueSchema = new mongoose.Schema(
   {
-    from: Number,
-    to: Number,
+    from: { type: mongoose.Schema.Types.Mixed }, // Allow both string and number
+    to: { type: mongoose.Schema.Types.Mixed }, // Allow both string and number
     sign: String,
     number: Number,
   },

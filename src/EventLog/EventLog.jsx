@@ -206,16 +206,16 @@ const EventLog = () => {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
         </div>
       ) : (
-        <div className="overflow-x-auto overflow-y-auto max-h-[600px] border border-gray-200 rounded-xl">
-          <table className="w-full">
+        <div className="overflow-auto max-h-[600px] border border-gray-200 rounded-xl">
+          <table className="w-full border-collapse">
             <thead className="sticky top-0 bg-gray-50 border-b border-gray-200">
               <tr className="text-left">
-                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[180px]">Date & Time</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[140px]">Username</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[160px]">Email</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[100px]">Role</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium whitespace-nowrap min-w-[130px]">Action</th>
-                <th className="pb-4 px-6 text-gray-600 font-medium min-w-[250px]">Details</th>
+                <th className="py-4 px-4 text-gray-600 font-medium whitespace-nowrap min-w-[140px]">Date & Time</th>
+                <th className="py-4 px-4 text-gray-600 font-medium whitespace-normal min-w-[100px]">Username</th>
+                <th className="py-4 px-4 text-gray-600 font-medium whitespace-normal min-w-[140px]">Email</th>
+                <th className="py-4 px-4 text-gray-600 font-medium whitespace-nowrap min-w-[100px]">Role</th>
+                <th className="py-4 px-4 text-gray-600 font-medium whitespace-nowrap min-w-[120px]">Action</th>
+                <th className="py-4 px-4 text-gray-600 font-medium min-w-[250px]">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -231,7 +231,7 @@ const EventLog = () => {
                     key={log._id || index}
                     className="hover:bg-gray-50 transition-colors border-b border-gray-100"
                   >
-                    <td className="py-4 px-6 text-gray-800 whitespace-nowrap min-w-[180px]">
+                    <td className="py-5 px-4 text-gray-800 whitespace-nowrap min-w-[140px] text-sm">
                       {new Date(log.createdAt).toLocaleString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -241,23 +241,23 @@ const EventLog = () => {
                         second: '2-digit',
                       })}
                     </td>
-                    <td className="py-4 px-6 text-gray-700 whitespace-nowrap min-w-[140px] truncate" title={log.username}>
+                    <td className="py-5 px-4 text-gray-700 whitespace-normal break-words min-w-[100px] text-sm font-medium">
                       {log.username}
                     </td>
-                    <td className="py-4 px-6 text-gray-600 whitespace-nowrap min-w-[160px] truncate" title={log.email}>
+                    <td className="py-5 px-4 text-gray-600 whitespace-normal break-words min-w-[140px] text-sm">
                       {log.email}
                     </td>
-                    <td className="py-4 px-6 text-gray-600 whitespace-nowrap min-w-[100px]">
-                      <span className="inline-block px-2 py-1 bg-gray-200 rounded text-xs font-medium">
+                    <td className="py-5 px-4 text-gray-600 whitespace-normal min-w-[100px]">
+                      <span className="inline-block px-3 py-1 bg-indigo-100 text-indigo-800 rounded text-sm font-medium">
                         {log.role || '-'}
                       </span>
                     </td>
-                    <td className="py-4 px-6 whitespace-nowrap min-w-[130px]">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${getActionBadgeColor(log.action)}`}>
+                    <td className="py-5 px-4 whitespace-nowrap min-w-[120px]">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium ${getActionBadgeColor(log.action)}`}>
                         {log.action}
                       </span>
                     </td>
-                    <td className="py-4 px-6 text-gray-600 min-w-[250px] break-words max-h-20 overflow-y-auto" title={log.details || ''}>
+                    <td className="py-5 px-4 text-gray-600 min-w-[250px] whitespace-normal break-words text-sm">
                       {log.details || '-'}
                     </td>
                   </tr>

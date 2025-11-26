@@ -63,6 +63,7 @@ router.post(
         username: user.fullname || user.email.split('@')[0],
         email: user.email,
         action: "Login",
+        role: user.role,
         details: `Logged in from ${req.ip}`,
         userId: user._id
       });

@@ -23,6 +23,21 @@ const Dashboard = () => {
   // Check if user is admin or super admin
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // Delete confirmation modal state
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+
+  const showToast = (message, type = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: "", type: "success" });
+    }, 3000);
+  };
+
   // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
@@ -103,9 +118,10 @@ const Dashboard = () => {
       }
       setShowModal(false);
       setNewEvent({ title: "", date: new Date(), description: "" });
+      showToast(newEvent._id ? "Event updated successfully" : "Event added successfully", "success");
     } catch (err) {
       console.error("Error saving event:", err);
-      alert("Failed to save event.");
+      showToast("Failed to save event", "error");
     }
   };
 
@@ -162,12 +178,9 @@ const Dashboard = () => {
 
   return (
     <div
-      className="h-screen w-screen flex items-center justify-center overflow-hidden"
+      className="h-screen w-screen flex items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat"
       style={{
         backgroundImage: `url(${bgImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
       }}
     >
       <motion.div
@@ -279,7 +292,7 @@ const Dashboard = () => {
                 <Calendar
                   onChange={setDate}
                   value={date}
-                  className="rounded-xl shadow-sm border-none"
+                  className="text-gray-800"
                   tileContent={({ date: tileDate }) => {
                     const hasEvent = events.some(
                       (event) =>
@@ -298,7 +311,7 @@ const Dashboard = () => {
                     setNewEvent({ ...newEvent, date });
                     setShowModal(true);
                   }}
-                  className="mt-4 bg-[#303345] text-black-800 px-4 py-2 rounded-lg shadow-md font-semibold"
+                  className="mt-4 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition"
                 >
                   + Add Event
                 </button>
@@ -317,11 +330,11 @@ const Dashboard = () => {
                     .map((event) => (
                       <div
                         key={event._id}
-                        className="bg-[#E8EAF6] p-3 rounded-lg mb-2 text-[#1F1F30] shadow-sm flex justify-between items-start"
+                        className="bg-indigo-50 p-3 rounded-lg mb-2 text-slate-900 shadow-sm flex justify-between items-start border border-indigo-200"
                       >
                         <div>
-                          <h4 className="font-bold">{event.title}</h4>
-                          <p className="text-sm text-gray-700">{event.description}</p>
+                          <h4 className="font-bold text-slate-900">{event.title}</h4>
+                          <p className="text-sm text-slate-700">{event.description}</p>
                         </div>
 
                         <div className="flex gap-2">
@@ -336,27 +349,18 @@ const Dashboard = () => {
                               });
                               setShowModal(true);
                             }}
-                            className="px-2 py-1 bg-yellow-400 text-black-800 rounded-md text-sm"
+                            className="px-2 py-1 bg-amber-400 hover:bg-amber-500 text-gray-900 rounded-md text-sm font-medium transition"
                           >
                             Edit
                           </button>
 
                           {/* Delete Button */}
                           <button
-                            onClick={async () => {
-                              if (window.confirm("Are you sure you want to delete this event?")) {
-                                try {
-                                  await axios.delete(`http://localhost:5000/api/events/${event._id}`);
-                                  setEvents((prev) =>
-                                    prev.filter((e) => e._id !== event._id)
-                                  );
-                                } catch (err) {
-                                  console.error("Error deleting event:", err);
-                                  alert("Failed to delete event.");
-                                }
-                              }
+                            onClick={() => {
+                              setEventToDelete(event);
+                              setShowDeleteConfirm(true);
                             }}
-                            className="px-2 py-1 bg-red-500 text-black-800 rounded-md text-sm"
+                            className="px-2 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-medium transition"
                           >
                             Delete
                           </button>
@@ -371,6 +375,72 @@ const Dashboard = () => {
                   )}
                 </div>
               </div>
+
+              {/* Delete Event Confirmation Modal */}
+              {showDeleteConfirm && eventToDelete && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+                >
+                  <motion.div
+                    initial={{ scale: 0.95, y: -20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.95, y: -20 }}
+                    className="bg-white rounded-2xl shadow-2xl p-6 w-[400px]"
+                  >
+                    <h3 className="text-xl font-bold text-slate-900 mb-4">Delete Event</h3>
+                    
+                    <p className="text-gray-700 mb-2">
+                      Are you sure you want to delete this event?
+                    </p>
+                    <p className="text-sm text-gray-600 mb-6 font-medium">
+                      {eventToDelete.title}
+                    </p>
+
+                    <p className="text-sm text-red-600 mb-6 bg-red-50 p-3 rounded-lg">
+                      ⚠️ This action cannot be undone.
+                    </p>
+
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => {
+                          setShowDeleteConfirm(false);
+                          setEventToDelete(null);
+                        }}
+                        disabled={isDeleting}
+                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-medium disabled:opacity-50"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={async () => {
+                          try {
+                            setIsDeleting(true);
+                            await axios.delete(`http://localhost:5000/api/events/${eventToDelete._id}`);
+                            setEvents((prev) =>
+                              prev.filter((e) => e._id !== eventToDelete._id)
+                            );
+                            showToast("Event deleted successfully", "success");
+                            setShowDeleteConfirm(false);
+                            setEventToDelete(null);
+                          } catch (err) {
+                            console.error("Error deleting event:", err);
+                            showToast("Unable to delete event. Please try again.", "error");
+                          } finally {
+                            setIsDeleting(false);
+                          }
+                        }}
+                        disabled={isDeleting}
+                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50"
+                      >
+                        {isDeleting ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              )}
 
               {/* Add/Edit Event Modal */}
               {/* Add/Edit Event Modal */}
@@ -387,7 +457,7 @@ const Dashboard = () => {
                     exit={{ scale: 0.9, opacity: 0 }}
                     className="bg-white p-6 rounded-2xl shadow-xl w-[400px]"
                   >
-                    <h3 className="text-lg font-bold text-[#303345] mb-4">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4">
                       {newEvent._id ? "Edit Event" : "Add Event"}
                     </h3>
                     <form onSubmit={handleAddEvent} className="flex flex-col gap-3">
@@ -395,13 +465,13 @@ const Dashboard = () => {
                         type="text"
                         placeholder="Title"
                         required
-                        className="border p-2 rounded"
+                        className="border-2 border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
                         value={newEvent.title}
                         onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                       />
                       <textarea
                         placeholder="Description"
-                        className="border p-2 rounded"
+                        className="border-2 border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white resize-none"
                         value={newEvent.description}
                         onChange={(e) =>
                           setNewEvent({ ...newEvent, description: e.target.value })
@@ -409,7 +479,7 @@ const Dashboard = () => {
                       />
                       <input
                         type="date"
-                        className="border p-2 rounded"
+                        className="border-2 border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 bg-white cursor-pointer"
                         value={new Date(newEvent.date).toISOString().split("T")[0]}
                         onChange={(e) =>
                           setNewEvent({ ...newEvent, date: new Date(e.target.value) })
@@ -419,13 +489,13 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setShowModal(false)}
-                          className="px-3 py-1 rounded bg-gray-300 hover:bg-gray-400 transition"
+                          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium transition"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="px-3 py-1 rounded bg-[#303345] text-black hover:bg-[#50506b] transition"
+                          className="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium transition"
                         >
                           {newEvent._id ? "Update" : "Add"}
                         </button>
@@ -458,12 +528,12 @@ const Dashboard = () => {
                     .map((event) => (
                       <li
                         key={event._id}
-                        onClick={() => setSelectedDate(new Date(event.date))} // ✅ syncs with calendar
-                        className="p-3 bg-[#E8EAF6] rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-[#C5CAE9] transition"
+                        onClick={() => setSelectedDate(new Date(event.date))}
+                        className="p-3 bg-indigo-50 rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-indigo-100 transition border border-indigo-200"
                       >
                         <div>
-                          <h4 className="font-bold text-[#1F1F30]">{event.title}</h4>
-                          <p className="text-sm text-gray-600">
+                          <h4 className="font-bold text-slate-900">{event.title}</h4>
+                          <p className="text-sm text-slate-700">
                             {new Date(event.date).toLocaleDateString()} — {event.description}
                           </p>
                         </div>
@@ -509,6 +579,29 @@ const Dashboard = () => {
           </motion.div> */}
         </motion.main>
       </motion.div>
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+          className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white z-50 flex items-center space-x-2 ${
+            toast.type === "success" ? "bg-green-500" : "bg-red-500"
+          }`}
+        >
+          {toast.type === "success" ? (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          )}
+          <span>{toast.message}</span>
+        </motion.div>
+      )}
     </div>
   );
 };
