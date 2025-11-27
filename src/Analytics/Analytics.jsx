@@ -245,6 +245,44 @@ async function handleFileUpload(e) {
     }
     
     await fetchMarkers();
+    
+    // Get the first uploaded marker and zoom to it
+    if (newPoints.length > 0) {
+      const firstMarker = newPoints[0];
+      const lat = firstMarker.latitude ?? firstMarker.lat;
+      const lng = firstMarker.longitude ?? firstMarker.lng;
+      
+      if (lat && lng && mapRef.current) {
+        // Zoom to the marker location
+        mapRef.current.setView([lat, lng], 14);
+        
+        // Set the marker as selected and show survey list after a brief delay to allow re-render
+        setTimeout(() => {
+          // Find the marker in surveyData (it should be there after fetchMarkers)
+          const uploadedMarker = surveyData.find(
+            (m) => (m.latitude ?? m.lat) === lat && (m.longitude ?? m.lng) === lng
+          );
+          
+          if (uploadedMarker) {
+            setSelectedMarker(uploadedMarker);
+            setSelectedSurvey(null);
+            setShowSurveyList(true);
+            setShowSurveyDetails(false);
+            setCurrentMarkerIndex(surveyData.indexOf(uploadedMarker));
+            
+            // Calculate popup position based on map container
+            const mapContainer = document.getElementById("map");
+            if (mapContainer) {
+              setPopupPos({
+                left: mapContainer.offsetWidth / 2,
+                top: mapContainer.offsetHeight / 2,
+              });
+            }
+          }
+        }, 100);
+      }
+    }
+    
     showToast("Coordinates uploaded successfully!", "success");
   } catch (err) {
     console.error("Upload error:", err.response ? err.response.data : err.message);
