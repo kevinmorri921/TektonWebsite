@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import L from "leaflet";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
@@ -28,7 +29,7 @@ function Analytics() { // <-- receive userRole as prop
   const [showSurveyList, setShowSurveyList] = useState(false);
   const [showSurveyDetails, setShowSurveyDetails] = useState(false);
   const [popupPos, setPopupPos] = useState({ left: 0, top: 0 });
-  const API_URL = "http://localhost:5000/api/markers";
+  const API_URL = `${API_BASE_URL}/api/markers`;
   const activeMarkerLatLng = useRef(null);
   const [currentMarkerIndex, setCurrentMarkerIndex] = useState(0);
   const [showManageSurvey, setShowManageSurvey] = useState(false);
@@ -216,7 +217,7 @@ async function handleFileUpload(e) {
   try {
     const uploadedMarkerCount = newPoints.length;
     for (const p of newPoints) {
-      await axios.post("http://localhost:5000/api/markers", p, {
+      await axios.post(`${API_BASE_URL}/api/markers`, p, {
         headers: { Authorization: `Bearer ${token}` },
       });
     }
@@ -230,7 +231,7 @@ async function handleFileUpload(e) {
         : markerNames;
       
       await axios.post(
-        "http://localhost:5000/api/activity-log",
+        `${API_BASE_URL}/api/activity-log`,
         {
           action: "Uploaded Marker",
           details: `Uploaded ${uploadedMarkerCount} marker(s): ${detailsText}`,
@@ -316,7 +317,7 @@ async function handleFileUpload(e) {
     if (token) {
       axios
         .post(
-          "http://localhost:5000/api/activity-log",
+          `${API_BASE_URL}/api/activity-log`,
           {
             action: "Downloaded File",
             details: `Downloaded survey: ${filename}`,
@@ -385,7 +386,7 @@ async function handleFileUpload(e) {
         console.log("[DEBUG] Editing survey value at index:", editSurveyValueIndex);
         
         response = await axios.put(
-          `http://localhost:5000/api/markers/${markerId}/surveys/${surveyIndex}/values/${editSurveyValueIndex}`,
+          `${API_BASE_URL}/api/markers/${markerId}/surveys/${surveyIndex}/values/${editSurveyValueIndex}`,
           {
             from: newSurveyValue.from.trim(),
             to: newSurveyValue.to.trim(),
@@ -401,7 +402,7 @@ async function handleFileUpload(e) {
       } else {
         // Add new value
         response = await axios.put(
-          `http://localhost:5000/api/markers/${markerId}/surveys/${surveyIndex}/values`,
+          `${API_BASE_URL}/api/markers/${markerId}/surveys/${surveyIndex}/values`,
           {
             from: newSurveyValue.from.trim(),
             to: newSurveyValue.to.trim(),
@@ -435,7 +436,7 @@ async function handleFileUpload(e) {
       try {
         const action = isEditing ? "Updated survey value" : "Added survey value";
         await axios.post(
-          "http://localhost:5000/api/activity-log",
+          `${API_BASE_URL}/api/activity-log`,
           {
             action: "Updated Survey",
             details: `${action} in ${surveyNameForLog} (From: ${newSurveyValue.from}, To: ${newSurveyValue.to}, Sign: ${newSurveyValue.sign}, Number: ${newSurveyValue.number})`,
@@ -527,7 +528,7 @@ async function handleFileUpload(e) {
       console.log("[DEBUG] Sending payload:", updatePayload);
 
       const response = await axios.put(
-        `http://localhost:5000/api/markers/${markerId}/surveys/${surveyIndex}`,
+        `${API_BASE_URL}/api/markers/${markerId}/surveys/${surveyIndex}`,
         updatePayload,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -551,7 +552,7 @@ async function handleFileUpload(e) {
       // Log activity
       try {
         await axios.post(
-          "http://localhost:5000/api/activity-log",
+          `${API_BASE_URL}/api/activity-log`,
           {
             action: "Updated Survey",
             details: `Updated marker details: ${editMarkerData.name}`,
@@ -606,7 +607,7 @@ async function handleFileUpload(e) {
 
       // Call DELETE endpoint
       const response = await axios.delete(
-        `http://localhost:5000/api/markers/${markerToDelete._id}`,
+        `${API_BASE_URL}/api/markers/${markerToDelete._id}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -626,7 +627,7 @@ async function handleFileUpload(e) {
                           `${markerToDelete.latitude}, ${markerToDelete.longitude}`;
         
         await axios.post(
-          "http://localhost:5000/api/activity-log",
+          `${API_BASE_URL}/api/activity-log`,
           {
             action: "Deleted Marker",
             details: `Deleted marker: ${markerName}`,
@@ -681,7 +682,7 @@ async function handleFileUpload(e) {
 
       // Call DELETE endpoint for survey
       const response = await axios.delete(
-        `http://localhost:5000/api/markers/${markerId}/surveys/${surveyIndex}`,
+        `${API_BASE_URL}/api/markers/${markerId}/surveys/${surveyIndex}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -703,7 +704,7 @@ async function handleFileUpload(e) {
       try {
         const surveyName = surveyToDelete.survey.name || "Unnamed Survey";
         await axios.post(
-          "http://localhost:5000/api/activity-log",
+          `${API_BASE_URL}/api/activity-log`,
           {
             action: "Deleted Survey",
             details: `Deleted survey: ${surveyName} from marker ${marker.name || `${marker.latitude}, ${marker.longitude}`}`,
@@ -777,7 +778,7 @@ async function handleFileUpload(e) {
           console.log(`[DELETE SURVEY] Attempting to delete survey at index ${surveyIndex}`);
           
           const response = await axios.delete(
-            `http://localhost:5000/api/markers/${markerId}/surveys/${surveyIndex}`,
+            `${API_BASE_URL}/api/markers/${markerId}/surveys/${surveyIndex}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
@@ -846,7 +847,7 @@ async function handleFileUpload(e) {
         // Refetch the marker data if we didn't get it from response
         try {
           const refreshResponse = await axios.get(
-            `http://localhost:5000/api/markers/${markerId}`,
+            `${API_BASE_URL}/api/markers/${markerId}`,
             {
               headers: { Authorization: `Bearer ${token}` },
             }
@@ -869,7 +870,7 @@ async function handleFileUpload(e) {
       try {
         const successCount = sortedIndices.length - deletionErrors.length;
         await axios.post(
-          "http://localhost:5000/api/activity-log",
+          `${API_BASE_URL}/api/activity-log`,
           {
             action: "Deleted Surveys",
             details: `Deleted ${successCount} survey(s) from marker ${selectedMarker.name || `${selectedMarker.latitude}, ${selectedMarker.longitude}`}`,

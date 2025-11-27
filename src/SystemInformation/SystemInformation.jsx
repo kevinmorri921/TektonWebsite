@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, AlertCircle, CheckCircle, Shield } from "lucide-react";
 import { Chart as ChartJS, ArcElement, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from "chart.js";
@@ -189,7 +190,7 @@ const SystemInformation = () => {
       }
 
       await axios.post(
-        "http://localhost:5000/api/system-info",
+        `${API_BASE_URL}/api/system-info`,
         systemInfo,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -211,7 +212,7 @@ const SystemInformation = () => {
       if (!token) return;
 
       const response = await axios.get(
-        "http://localhost:5000/api/system-info/analytics",
+        `${API_BASE_URL}/api/system-info/analytics`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

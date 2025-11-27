@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/apiClient";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertCircle, CheckCircle, X } from "lucide-react";
 
@@ -118,7 +119,7 @@ const SystemInformationModal = ({ isOpen, onClose }) => {
       }
 
       await axios.post(
-        "http://localhost:5000/api/system-info",
+        `${API_BASE_URL}/api/system-info`,
         systemInfo,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -139,7 +140,7 @@ const SystemInformationModal = ({ isOpen, onClose }) => {
       if (!token) return;
 
       const response = await axios.get(
-        "http://localhost:5000/api/system-info/analytics",
+        `${API_BASE_URL}/api/system-info/analytics`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 

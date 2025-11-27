@@ -109,7 +109,7 @@ export function enhancedCorsMiddleware() {
   if (NODE_ENV === "production") {
     // Production: Only allow specific frontend domain
     allowedOrigins = process.env.ALLOWED_ORIGINS
-      ? process.env.ALLOWED_ORIGINS.split(",")
+      ? process.env.ALLOWED_ORIGINS.split(",").map(o => o.trim())
       : ["https://yourdomain.com"];
   } else if (NODE_ENV === "staging") {
     // Staging: Allow specific domains
@@ -119,19 +119,43 @@ export function enhancedCorsMiddleware() {
       "http://localhost:3000",
     ];
   } else {
-    // Development: Allow localhost variants
+    // Development: Allow localhost variants + ngrok subdomains
     allowedOrigins = [
       "http://localhost:5173",
       "http://localhost:3000",
       "http://127.0.0.1:5173",
+      "http://127.0.0.1:3000",
     ];
+    
+    // Add support for ngrok subdomains dynamically
+    // Matches: https://*.ngrok.io, https://*.ngrok-free.app, etc.
+    // This regex-based approach is more flexible than hardcoding URLs
   }
 
   return (req, res, next) => {
     const origin = req.headers.origin;
 
+    // Helper function to check if origin is allowed
+    const isOriginAllowed = (origin, allowedOrigins) => {
+      // Direct match
+      if (allowedOrigins.includes(origin)) {
+        return true;
+      }
+      
+      // Support ngrok domains in development
+      if (NODE_ENV === "development") {
+        // Allow any ngrok subdomain (*.ngrok.io, *.ngrok-free.app, etc.)
+        const ngrokRegex = /^https?:\/\/[a-zA-Z0-9\-]+\.ngrok(?:-free)?\.(?:io|app)$/;
+        if (ngrokRegex.test(origin)) {
+          return true;
+        }
+      }
+      
+      return false;
+    };
+
     // Check if origin is allowed
-    if (allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin, allowedOrigins)) {
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Access-Control-Allow-Credentials", "true");
       res.setHeader(

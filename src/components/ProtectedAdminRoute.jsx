@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
+import { API_BASE_URL } from "../utils/apiClient";
 
 const ProtectedAdminRoute = ({ children }) => {
   const [isLoading, setIsLoading] = React.useState(true);
@@ -14,7 +15,7 @@ const ProtectedAdminRoute = ({ children }) => {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/admin/verify', {
+        const response = await fetch(`${API_BASE_URL}/api/admin/verify`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'

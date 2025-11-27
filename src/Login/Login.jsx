@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Eye, EyeOff } from "lucide-react"; // 👈 Added
+import { API_BASE_URL } from "../utils/apiClient";
 import bgImage from "../assets/bg-pics.jpg";
 
 const Login = () => {
@@ -30,7 +31,7 @@ const Login = () => {
   setMessage("");
 
   try {
-    const res = await axios.post("http://localhost:5000/api/login", form);
+    const res = await axios.post(`${API_BASE_URL}/api/login`, form);
 
     if (res.data.success) {
       console.log("🔑 Login successful for:", form.email);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/apiClient";
 import bgImage from "../assets/db-pic.jpg";
 import { Home, BarChart3, Settings, User, LogOut, Lock, Phone, MapPin, Edit2, Check, X, AlertCircle, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -42,7 +43,7 @@ const Profile = () => {
 
       // Call endpoint to get current user data
       const response = await axios.get(
-        "http://localhost:5000/api/auth/user-profile",
+        `${API_BASE_URL}/api/auth/user-profile`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -191,7 +192,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/auth/update-user-details",
+        `${API_BASE_URL}/api/auth/update-user-details`,
         { address: tempAddress.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -229,7 +230,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/auth/update-user-details",
+        `${API_BASE_URL}/api/auth/update-user-details`,
         { contactNumber: tempContact.trim() },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -269,7 +270,7 @@ const Profile = () => {
     try {
       const token = localStorage.getItem("token");
       await axios.post(
-        "http://localhost:5000/api/logout",
+        `${API_BASE_URL}/api/logout`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );

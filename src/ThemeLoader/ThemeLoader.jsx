@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { API_BASE_URL } from "../utils/apiClient";
 
 function ThemeLoader() {
   const [theme, setTheme] = useState("light");
@@ -7,7 +8,7 @@ function ThemeLoader() {
     // Fetch user theme from backend (like your PHP code)
     const fetchTheme = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/user-theme", {
+        const response = await fetch(`${API_BASE_URL}/api/user-theme`, {
           credentials: "include", // include cookies for user session
         });
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/apiClient";
 import bgImage from "../assets/db-pic.jpg";
 import { Home, BarChart3, Settings, User, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
@@ -58,7 +59,7 @@ const Dashboard = () => {
         } else {
           // Fallback: verify with backend
           try {
-            const response = await axios.get("http://localhost:5000/api/admin/verify", {
+            const response = await axios.get(`${API_BASE_URL}/api/admin/verify`, {
               credentials: 'include'
             });
             if (response.status === 200) {
@@ -89,7 +90,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/events");
+        const res = await axios.get(`${API_BASE_URL}/api/events`);
         setEvents(res.data);
       } catch (err) {
         console.error("Error fetching events:", err);
@@ -105,7 +106,7 @@ const Dashboard = () => {
       if (newEvent._id) {
         // Editing existing event
         const res = await axios.put(
-          `http://localhost:5000/api/events/${newEvent._id}`,
+          `${API_BASE_URL}/api/events/${newEvent._id}`,
           newEvent
         );
         setEvents((prev) =>
@@ -113,7 +114,7 @@ const Dashboard = () => {
         );
       } else {
         // Adding new event
-        const res = await axios.post("http://localhost:5000/api/events", newEvent);
+        const res = await axios.post(`${API_BASE_URL}/api/events`, newEvent);
         setEvents((prev) => [...prev, res.data]);
       }
       setShowModal(false);
@@ -130,7 +131,7 @@ const Dashboard = () => {
       const token = localStorage.getItem('token');
       // Call the logout endpoint to log the sign-out event
       await axios.post(
-        'http://localhost:5000/api/logout',
+        `${API_BASE_URL}/api/logout`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -418,7 +419,7 @@ const Dashboard = () => {
                         onClick={async () => {
                           try {
                             setIsDeleting(true);
-                            await axios.delete(`http://localhost:5000/api/events/${eventToDelete._id}`);
+                            await axios.delete(`${API_BASE_URL}/api/events/${eventToDelete._id}`);
                             setEvents((prev) =>
                               prev.filter((e) => e._id !== eventToDelete._id)
                             );

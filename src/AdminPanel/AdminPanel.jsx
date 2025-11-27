@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/apiClient';
 import bgImage from '../assets/db-pic.jpg';
 import { BarChart3, Settings, User, LogOut, Users, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -66,7 +67,7 @@ const AdminPanel = () => {
       
       // First, update email/fullname/password
       const response = await axios.put(
-        `http://localhost:5000/api/admin/users/${editingUser._id}`,
+        `${API_BASE_URL}/api/admin/users/${editingUser._id}`,
         {
           email: editFormData.email.trim(),
           fullname: editFormData.fullname.trim(),
@@ -79,7 +80,7 @@ const AdminPanel = () => {
       let updatedUserData = response.data.user;
       if (editFormData.role && editFormData.role !== editingUser.role) {
         const roleResponse = await axios.put(
-          `http://localhost:5000/api/admin/users/${editingUser._id}/role`,
+          `${API_BASE_URL}/api/admin/users/${editingUser._id}/role`,
           { role: editFormData.role },
           { headers: { Authorization: `Bearer ${token}` } }
         );
@@ -138,7 +139,7 @@ const AdminPanel = () => {
   const handleUserEdit = async (updatedData) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`http://localhost:5000/api/admin/users/${editingUser._id}`, updatedData, {
+      await axios.put(`${API_BASE_URL}/api/admin/users/${editingUser._id}`, updatedData, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -176,7 +177,7 @@ const AdminPanel = () => {
       const newStatus = !currentStatus;
 
       const response = await axios.put(
-        `http://localhost:5000/api/admin/users/${userId}/toggle-status`,
+        `${API_BASE_URL}/api/admin/users/${userId}/toggle-status`,
         { 
           active: newStatus
         },
@@ -286,7 +287,7 @@ const AdminPanel = () => {
     setUserLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/admin/users', {
+      const response = await axios.get(`${API_BASE_URL}/api/admin/users`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const usersData = response.data || [];
@@ -310,7 +311,7 @@ const AdminPanel = () => {
 
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`http://localhost:5000/api/admin/users/${userId}`, {
+      await axios.delete(`${API_BASE_URL}/api/admin/users/${userId}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -353,7 +354,7 @@ const AdminPanel = () => {
 
       try {
         // Verify admin status
-        const verifyResponse = await axios.get('http://localhost:5000/api/admin/verify', {
+        const verifyResponse = await axios.get(`${API_BASE_URL}/api/admin/verify`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -364,12 +365,12 @@ const AdminPanel = () => {
         }));
 
         // Fetch system stats
-        const statsResponse = await axios.get('http://localhost:5000/api/admin/stats', {
+        const statsResponse = await axios.get(`${API_BASE_URL}/api/admin/stats`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
         // Fetch marker count
-        const markerResponse = await axios.get('http://localhost:5000/api/markers/stats/count', {
+        const markerResponse = await axios.get(`${API_BASE_URL}/api/markers/stats/count`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
@@ -498,7 +499,7 @@ const AdminPanel = () => {
                     const token = localStorage.getItem('token');
                     // Call the logout endpoint to log the sign-out event
                     await axios.post(
-                      'http://localhost:5000/api/logout',
+                      `${API_BASE_URL}/api/logout`,
                       {},
                       { headers: { Authorization: `Bearer ${token}` } }
                     );

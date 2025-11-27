@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import compression from "compression";
 import dotenv from "dotenv";
 import https from "https";
 import fs from "fs";
@@ -79,6 +80,9 @@ logSecurityConfiguration();
 
 // 🧰 Middleware
 
+// 🔐 Enable compression for all responses (improves ngrok performance)
+app.use(compression());
+
 // 🔐 CORS with environment-based configuration
 app.use(enhancedCorsMiddleware());
 
@@ -148,14 +152,21 @@ app.use(secureErrorHandler);
 // 🚀 Start Server
 const PORT = process.env.PORT || 5000;
 const NODE_ENV = process.env.NODE_ENV || "development";
+const HOST = "0.0.0.0"; // Bind to all interfaces (supports ngrok, Docker, etc.)
+
+// Log startup configuration
+logger.info(`🔧 [STARTUP] Environment: ${NODE_ENV}`);
+logger.info(`🔧 [STARTUP] Port: ${PORT}`);
+logger.info(`🔧 [STARTUP] Host: ${HOST}`);
 
 // Check for required environment variables
 const requiredEnvVars = ["JWT_SECRET", "MONGO_URI"];
 const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar]);
 if (missingEnvVars.length > 0) {
-  logger.error("FATAL: Missing required environment variables: %s", missingEnvVars.join(", "));
+  logger.error("🚨 [STARTUP] FATAL: Missing required environment variables: %s", missingEnvVars.join(", "));
   process.exit(1);
 }
+logger.info("✅ [STARTUP] All required environment variables present");
 
 // Load TLS certificates if in production or if provided
 let server;
@@ -183,9 +194,13 @@ if (NODE_ENV === "production" || (process.env.TLS_CERT && process.env.TLS_KEY)) 
   server = app;
 }
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   const protocol = server instanceof https.Server ? "https" : "http";
-  logger.info(`🚀 Server running on ${protocol}://localhost:${PORT}`);
+  logger.info(`🚀 [STARTUP] Server listening on ${protocol}://${HOST}:${PORT}`);
+  logger.info(`🚀 [STARTUP] Local access: ${protocol}://localhost:${PORT}`);
+  if (process.env.NGROK_URL) {
+    logger.info(`🌐 [STARTUP] Public ngrok URL: ${process.env.NGROK_URL}`);
+  }
 });
 
 // Global error handlers for monitoring

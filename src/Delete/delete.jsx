@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
+import { API_BASE_URL } from "../utils/apiClient";
 
 function DeleteAccount() {
   const [status, setStatus] = useState("");
@@ -8,7 +9,7 @@ function DeleteAccount() {
     if (!window.confirm("Are you sure you want to delete your account?")) return;
 
     try {
-      const response = await fetch("http://localhost:5000/delete-account", {
+      const response = await fetch(`${API_BASE_URL}/delete-account`, {
         method: "POST",
         credentials: "include", // include cookies for session
         headers: { "Content-Type": "application/json" }

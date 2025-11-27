@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/apiClient";
 import bgImage from "../assets/bg-pics.jpg";
 
 const Signup = () => {
@@ -38,7 +39,7 @@ const Signup = () => {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/signup", form);
+      const res = await axios.post(`${API_BASE_URL}/api/signup`, form);
 
       if (res.data.success) {
         setMessage("✅ Registration successful! Redirecting to login...");

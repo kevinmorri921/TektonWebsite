@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { API_BASE_URL } from '../utils/apiClient';
 
 const EventLog = () => {
   const [logs, setLogs] = useState([]);
@@ -11,7 +12,7 @@ const EventLog = () => {
   const [totalPages, setTotalPages] = useState(1);
 
   const LOGS_PER_PAGE = 20;
-  const API_URL = 'http://localhost:5000/api/activity-log';
+  const API_URL = `${API_BASE_URL}/api/activity-log`;
 
   const fetchLogs = async () => {
     try {

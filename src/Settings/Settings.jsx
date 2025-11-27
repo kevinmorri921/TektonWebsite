@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import bgImage from "../assets/db-pic.jpg";
 import { Home, BarChart3, Settings, User, LogOut } from "lucide-react";
 import axios from "axios";
+import { API_BASE_URL } from "../utils/apiClient";
 import { motion } from "framer-motion";
 
 function SettingsPage() {
@@ -38,7 +39,7 @@ function SettingsPage() {
   useEffect(() => {
     const fetchSettings = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/settings", { credentials: "include" });
+        const res = await fetch(`${API_BASE_URL}/api/settings`, { credentials: "include" });
         if (!res.ok) throw new Error("Failed to load settings");
         const data = await res.json();
         setSettings({
@@ -69,7 +70,7 @@ function SettingsPage() {
     e.preventDefault();
     setSuccess(false);
     try {
-      const res = await fetch("http://localhost:5000/api/settings", {
+      const res = await fetch(`${API_BASE_URL}/api/settings`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
