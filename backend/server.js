@@ -14,11 +14,14 @@ import logoutRoute from "./routes/logout.js";
 import markerRoutes from "./routes/markerRoutes.js";
 import changePasswordRoute from "./routes/change-password.js";
 import updateProfileRoute from "./routes/update-profile.js";
+import updateUserDetailsRoute from "./routes/update-user-details.js";
+import userProfileRoute from "./routes/user-profile.js";
 import deleteAccountRoute from "./routes/delete-account.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
 import activityLogRoutes from "./routes/activityLogRoutes.js";
+import systemInfoRoutes from "./routes/system-info.js";
 
 // Import security and integrity middleware
 import { integrityMiddleware, checksumValidation } from "./middleware/dataIntegrity.js";
@@ -109,11 +112,14 @@ app.use("/api/logout", logoutRoute);
 app.use("/api/markers", markerRoutes);
 app.use("/api/auth/change-password", changePasswordRoute);
 app.use("/api/auth/update-profile", updateProfileRoute);
+app.use("/api/auth/update-user-details", updateUserDetailsRoute);
+app.use("/api/auth/user-profile", userProfileRoute);
 app.use("/api/auth/delete-account", deleteAccountRoute);
 app.use("/api/events", eventRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminUserRoutes);
 app.use("/api/activity-log", activityLogRoutes);
+app.use("/api/system-info", systemInfoRoutes);
 
 // 🧾 Root route (for testing)
 app.get("/", (req, res) => {

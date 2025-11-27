@@ -37,6 +37,16 @@ const userSchema = new mongoose.Schema({
   isEnabled: { 
     type: Boolean, 
     default: true 
+  },
+
+  address: {
+    type: String,
+    default: ""
+  },
+
+  contactNumber: {
+    type: String,
+    default: ""
   }
 }, 
 { timestamps: true }

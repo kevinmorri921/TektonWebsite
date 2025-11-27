@@ -549,21 +549,6 @@ const Dashboard = () => {
             </motion.div>
           </div>
 
-          {/* OTHER FEATURE */}
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="bg-white rounded-2xl shadow-md p-6 mb-6"
-          >
-            <h3 className="text-lg font-semibold mb-4 text-[#303345]">
-              ADD OTHER FEATURES Here
-            </h3>
-            <p className="text-red-600">
-              Additional content like notes, upcoming events, or announcements can go here.
-            </p>
-          </motion.div>
-
           {/* Search bar */}
           {/* <motion.div
             initial={{ y: 20, opacity: 0 }}

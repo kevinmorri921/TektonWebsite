@@ -80,7 +80,10 @@ router.post(
       message: "Login successful",
       token,
       fullname: user.fullname,
+      email: user.email,
       role: user.role,
+      address: user.address || "",
+      contactNumber: user.contactNumber || "",
     });
 
     logger.info("[LOGIN] Login successful for email=%s userId=%s", user.email, user._id);

@@ -45,6 +45,7 @@ const Login = () => {
       );
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("fullname", res.data.fullname);
+      localStorage.setItem("email", res.data.email || form.email);
 
       // Redirect logic
       if (res.data.role === "admin" || form.email === 'super_admin@tekton.com') {

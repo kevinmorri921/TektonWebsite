@@ -5,6 +5,7 @@ import bgImage from '../assets/db-pic.jpg';
 import { BarChart3, Settings, User, LogOut, Users, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 import EventLog from '../EventLog/EventLog';
+import SystemInformationModal from '../SystemInformation/SystemInformationModal';
 
 const AdminPanel = () => {
   const [adminInfo, setAdminInfo] = useState({
@@ -34,7 +35,13 @@ const AdminPanel = () => {
   const [editFormData, setEditFormData] = useState({ email: '', fullname: '', password: '', role: '', showPassword: false });
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [currentView, setCurrentView] = useState('users'); // 'users', 'eventlog' - User Management is default
+  const [showSystemInfoModal, setShowSystemInfoModal] = useState(false);
   const navigate = useNavigate();
+
+  // ✅ Get user role for permission checks
+  const currentUser = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const userRole = currentUser?.role?.toLowerCase();
+  const canAccessSystemInfo = userRole && ["super_admin", "admin"].includes(userRole);
 
   // Reset form when modal closes
   useEffect(() => {
@@ -455,12 +462,16 @@ const AdminPanel = () => {
                 >
                   <FileText size={18} /> Event Log
                 </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"
-                >
-                  <BarChart3 size={18} /> Analytics
-                </motion.button>
+                {canAccessSystemInfo && (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    onClick={() => setShowSystemInfoModal(true)}
+                    className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"
+                    title="System Information Analytics"
+                  >
+                    <BarChart3 size={18} /> System Information
+                  </motion.button>
+                )}
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"
@@ -914,6 +925,12 @@ const AdminPanel = () => {
         )}
 
         </motion.main>
+
+        {/* System Information Modal */}
+        <SystemInformationModal 
+          isOpen={showSystemInfoModal} 
+          onClose={() => setShowSystemInfoModal(false)} 
+        />
       </motion.div>
     </div>
   );

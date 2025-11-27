@@ -947,7 +947,7 @@ async function handleFileUpload(e) {
   <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-[2000]">
     <label className="flex items-center justify-center gap-2 bg-[#ffffff] text-[#303345] text-sm px-6 py-2 rounded-lg shadow hover:bg-[#b0a3a2] transition cursor-pointer whitespace-nowrap">
       <FilePlus2 className="w-5 h-5" />
-      Upload Coordinates
+      Upload JSON file
       <input type="file" accept=".json" multiple onChange={handleFileUpload} className="hidden" />
     </label>
   </div>

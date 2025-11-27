@@ -108,8 +108,6 @@ const EventLog = () => {
         return 'bg-blue-100 text-blue-800';
       case 'Downloaded File':
         return 'bg-green-100 text-green-800';
-      case 'Created Survey':
-        return 'bg-purple-100 text-purple-800';
       case 'Updated Survey':
         return 'bg-yellow-100 text-yellow-800';
       case 'Deleted Marker':
@@ -173,7 +171,6 @@ const EventLog = () => {
             <option value="Sign Out">Sign Out</option>
             <option value="Uploaded Marker">Uploaded Marker</option>
             <option value="Downloaded File">Downloaded File</option>
-            <option value="Created Survey">Created Survey</option>
             <option value="Updated Survey">Updated Survey</option>
             <option value="Deleted Marker">Deleted Marker</option>
           </select>
