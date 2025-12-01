@@ -111,3 +111,52 @@ button:focus-visible {
 *:hover {
   scrollbar-color: rgba(176, 184, 198, 0.8) transparent;
 }
+
+/* Global Dark Mode Styling */
+.dark {
+  --color-bg-primary: #1E1E2A;
+  --color-bg-secondary: #2A2A3E;
+  --color-bg-tertiary: #1E1E2A;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e0e0e0;
+  --color-border: #404050;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1E1E2A;
+  color: #ffffff;
+  border-color: #404050;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #8884ff;
+  box-shadow: 0 0 0 3px rgba(136, 132, 255, 0.1);
+}
+
+/* Dark mode calendar styling */
+.dark .react-calendar {
+  background-color: #2A2A3E;
+  border-color: #404050;
+  color: #ffffff;
+}
+
+.dark .react-calendar button {
+  color: #ffffff;
+}
+
+.dark .react-calendar button:hover {
+  background-color: #404050;
+}
+
+.dark .react-calendar__tile--active {
+  background-color: #8884ff;
+  color: #ffffff;
+}
+
+.dark .react-calendar__navigation {
+  color: #ffffff;
+}

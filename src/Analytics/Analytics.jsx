@@ -1008,7 +1008,7 @@ async function handleFileUpload(e) {
           exit={{ opacity: 0, scale: 0.95 }}
           style={{ left: popupPos.left, top: popupPos.top, transform: "translate(-50%, -120%)" }}
         >
-      <div className="bg-white rounded-2xl shadow-2xl p-5 border border-gray-200 w-[380px] relative" onClick={() => setOpenMenuIndex(null)}>
+      <div className="bg-white dark:bg-[#2A2A3E] rounded-2xl shadow-2xl p-5 border border-gray-200 dark:border-gray-600 w-[380px] relative" onClick={() => setOpenMenuIndex(null)}>
 
         {/* Top row: title + close */}
         <div className="flex items-start justify-between gap-3">
@@ -1041,7 +1041,7 @@ async function handleFileUpload(e) {
 
                 {/* Dropdown Menu */}
                 {openMenuIndex === "header" && (
-                  <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-[5000] py-1">
+                  <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-[#1E1E2A] rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 z-[5000] py-1">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -1107,7 +1107,7 @@ async function handleFileUpload(e) {
                     setShowSurveyList(false);
                     setShowSurveyDetails(true);
                   }}
-                  className="flex items-center justify-between gap-3 bg-white hover:bg-gray-50 border border-gray-100 rounded-lg px-3 py-2 cursor-pointer transition"
+                  className="flex items-center justify-between gap-3 bg-white dark:bg-[#1E1E2A] hover:bg-gray-50 dark:hover:bg-[#252540] border border-gray-100 dark:border-gray-700 rounded-lg px-3 py-2 cursor-pointer transition"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-semibold" style={{ backgroundColor: "#303345" }}>  {(survey.name || `S${i+1}`)[0]} </div>
@@ -1138,7 +1138,7 @@ async function handleFileUpload(e) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="bg-white/95 backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[800px] h-[500px] relative">
+      <div className="bg-white dark:bg-[#2A2A3E] backdrop-blur-xl p-6 rounded-2xl shadow-2xl w-[800px] h-[500px] relative">
         <button
           onClick={() => setShowSurveyDetails(false)}
           className="absolute top-3 right-3 text-gray-600 hover:text-red-600 p-2 rounded"
@@ -1295,7 +1295,7 @@ async function handleFileUpload(e) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+      <div className="bg-white dark:bg-[#2A2A3E] rounded-2xl shadow-2xl p-6 w-[600px] max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-2xl font-bold text-[#303345]">Manage Survey</h3>
           <button

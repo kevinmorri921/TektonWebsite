@@ -9,16 +9,17 @@ import Dashboard from "./Dashboard/Dashboard";
 import Analytics from "./Analytics/Analytics";
 import Profile from "./Profile/profile";
 import Delete from "./Delete/delete";
-import Settings from "./Settings/settings";
 import AdminPanel from "./AdminPanel/AdminPanel";
 import SystemInformation from "./SystemInformation/SystemInformation";
 import ProtectedAdminRoute from "./components/ProtectedAdminRoute";
+import ThemeLoader from "./ThemeLoader/ThemeLoader";
 
 
 function App() {
 
   return (
     <Router>
+      <ThemeLoader />
       <Routes>
         {/* Public routes */}
         <Route path="/" element={<TektonWelcome />} />
@@ -30,7 +31,6 @@ function App() {
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/delete" element={<Delete />} />
-        <Route path="/settings" element={<Settings />} />
         
         {/* Admin routes */}
         <Route path="/admin" element={

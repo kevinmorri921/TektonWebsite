@@ -104,7 +104,7 @@ const Login = () => {
       >
         <button
           onClick={() => navigate("/")}
-          className="bg-white text-gray-800 hover:bg-gray-200 hover:text-gray-700 transition-colors text-xs font-medium px-2 py-1 rounded"
+          className="bg-white dark:bg-gray-800 text-gray-800 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-xs font-medium px-2 py-1 rounded"
         >
           ⬅ Back
         </button>
@@ -112,7 +112,7 @@ const Login = () => {
 
       {/* Main Container */}
       <div
-        className={`flex w-[700px] h-[400px] bg-[#323548]/80 backdrop-blur-lg rounded-[1.8rem] shadow-2xl overflow-hidden mt-[-25px] transition-all duration-1000 ${
+        className={`flex w-[700px] h-[400px] bg-[#323548]/80 dark:bg-[#2A2A3E]/90 backdrop-blur-lg rounded-[1.8rem] shadow-2xl overflow-hidden mt-[-25px] transition-all duration-1000 ${
           animate.container ? "opacity-100 translate-y-0" : "opacity-0 translate-y-5"
         }`}
       >

@@ -23,6 +23,7 @@ import adminRoutes from "./routes/adminRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
 import activityLogRoutes from "./routes/activityLogRoutes.js";
 import systemInfoRoutes from "./routes/system-info.js";
+import themeRoutes from "./routes/theme.js";
 
 // Import security and integrity middleware
 import { integrityMiddleware, checksumValidation } from "./middleware/dataIntegrity.js";
@@ -124,6 +125,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin", adminUserRoutes);
 app.use("/api/activity-log", activityLogRoutes);
 app.use("/api/system-info", systemInfoRoutes);
+app.use("/api/theme", themeRoutes);
 
 // 🧾 Root route (for testing)
 app.get("/", (req, res) => {

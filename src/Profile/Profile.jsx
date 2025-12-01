@@ -290,7 +290,7 @@ const Profile = () => {
   // Show loading spinner
   if (isLoading) {
     return (
-      <div className="h-screen w-screen flex items-center justify-center bg-[#F8F9FA]">
+      <div className="h-screen w-screen flex items-center justify-center bg-[#F8F9FA] dark:bg-[#1E1E2A]">
         <p className="text-gray-600 text-lg">Loading...</p>
       </div>
     );
@@ -337,14 +337,14 @@ const Profile = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="flex w-[90%] max-w-[1200px] h-[85vh] bg-[#F8F9FA] rounded-[2rem] shadow-2xl overflow-hidden"
+        className="flex w-[90%] max-w-[1200px] h-[85vh] bg-[#F8F9FA] dark:bg-[#1E1E2A] rounded-[2rem] shadow-2xl overflow-hidden"
       >
         {/* SIDEBAR */}
         <motion.aside
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="w-[250px] bg-[#F8F9FA] flex flex-col py-6 px-6 rounded-l-[2rem]"
+          className="w-[250px] bg-[#F8F9FA] dark:bg-[#2A2A3E] flex flex-col py-6 px-6 rounded-l-[2rem]"
         >
           <p className="text-xl font-semibold italic text-center text-gray-800 mb-4 mt-6">
             Hi, <span className="font-bold">{fullname || "User"}</span>!
@@ -360,7 +360,6 @@ const Profile = () => {
           <nav className="space-y-5">
             <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/dashboard")} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-[#303345] font-medium transition"> <Home size={18} /> Dashboard </motion.button>
             <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/analytics")} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-[#303345] font-medium transition"> <BarChart3 size={18} /> Analytics </motion.button>
-            <motion.button whileHover={{ scale: 1.05 }} onClick={() => navigate("/settings")} className="flex items-center gap-3 hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-[#303345] font-medium transition"> <Settings size={18} /> Settings </motion.button>
           </nav>
 
           <div className="space-y-4 mt-auto mb-6">
@@ -376,7 +375,7 @@ const Profile = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="flex-1 p-10 bg-[#F8F9FA] overflow-y-auto rounded-r-[2rem]"
+          className="flex-1 p-10 bg-[#F8F9FA] dark:bg-[#1E1E2A] overflow-y-auto rounded-r-[2rem]"
         >
           <div className="flex justify-between items-start mb-6">
             <div>

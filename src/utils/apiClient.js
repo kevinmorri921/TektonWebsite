@@ -1,19 +1,24 @@
 /**
  * API Client Configuration
- * Supports both local development and ngrok public URLs
+ * Supports local development
+ * ngrok support available (see commented section below)
  */
 
 // Determine API base URL from environment
 // In development: http://localhost:5000
-// In production or ngrok: Use VITE_API_URL environment variable
+// For ngrok: Set VITE_API_URL environment variable (see below)
 const getAPIBaseURL = () => {
-  // First priority: Use environment variable (for ngrok or custom deployment)
-  if (import.meta.env.VITE_API_URL) {
-    return import.meta.env.VITE_API_URL;
-  }
-  
-  // Fallback: Use localhost for development
+  // Primary: Use localhost for local development
   return 'http://localhost:5000';
+  
+  // 🔶 COMMENTED: ngrok alternative
+  // Uncomment below to use ngrok instead of localhost
+  // First priority: Use environment variable (for ngrok or custom deployment)
+  // if (import.meta.env.VITE_API_URL) {
+  //   return import.meta.env.VITE_API_URL;
+  // }
+  // Fallback: Use localhost for development
+  // return 'http://localhost:5000';
 };
 
 export const API_BASE_URL = getAPIBaseURL();

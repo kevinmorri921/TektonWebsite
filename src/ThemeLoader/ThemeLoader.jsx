@@ -1,39 +1,57 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import axios from "axios";
 import { API_BASE_URL } from "../utils/apiClient";
 
 function ThemeLoader() {
-  const [theme, setTheme] = useState("light");
-
   useEffect(() => {
-    // Fetch user theme from backend (like your PHP code)
-    const fetchTheme = async () => {
+    // Try to load user's theme from backend on app startup
+    const loadUserTheme = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/user-theme`, {
-          credentials: "include", // include cookies for user session
+        const token = localStorage.getItem("token");
+        if (!token) {
+          // No token, use localStorage as fallback
+          loadThemeFromStorage();
+          return;
+        }
+
+        // Fetch user's theme preference from backend
+        const response = await axios.get(`${API_BASE_URL}/api/theme`, {
+          headers: { Authorization: `Bearer ${token}` },
         });
 
-        const data = await response.json();
-        if (response.ok && data.theme) {
-          setTheme(data.theme);
+        if (response.data.success) {
+          const userTheme = response.data.theme || "light";
+          applyTheme(userTheme);
+          localStorage.setItem("theme", userTheme);
+        } else {
+          loadThemeFromStorage();
         }
       } catch (error) {
-        console.error("Error loading theme:", error);
+        console.error("Error loading user theme:", error);
+        // Fallback to localStorage if backend request fails
+        loadThemeFromStorage();
       }
     };
 
-    fetchTheme();
+    const loadThemeFromStorage = () => {
+      const savedTheme = localStorage.getItem("theme") || "light";
+      applyTheme(savedTheme);
+    };
+
+    const applyTheme = (theme) => {
+      if (theme === "dark") {
+        document.documentElement.classList.add("dark");
+        document.body.classList.add("dark-mode");
+      } else {
+        document.documentElement.classList.remove("dark");
+        document.body.classList.remove("dark-mode");
+      }
+    };
+
+    loadUserTheme();
   }, []);
 
-  // Apply the theme to body tag (like PHP's script)
-  useEffect(() => {
-    if (theme === "dark") {
-      document.body.classList.add("dark-mode");
-    } else {
-      document.body.classList.remove("dark-mode");
-    }
-  }, [theme]);
-
-  return null; // this component just sets the theme, no UI
+  return null;
 }
 
 export default ThemeLoader;

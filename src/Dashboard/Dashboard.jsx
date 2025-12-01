@@ -179,16 +179,16 @@ const Dashboard = () => {
 
   return (
     <div
-      className="h-screen w-screen flex items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat"
+      className="h-screen w-screen flex items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat dark:bg-[#1E1E2A]"
       style={{
-        backgroundImage: `url(${bgImage})`,
+        backgroundImage: localStorage.getItem('theme') === 'dark' ? 'none' : `url(${bgImage})`,
       }}
     >
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="flex w-[90%] max-w-[1200px] h-[85vh] bg-[#F8F9FA] rounded-[2rem] shadow-2xl overflow-hidden"
+        className="flex w-[90%] max-w-[1200px] h-[85vh] bg-[#F8F9FA] dark:bg-[#1E1E2A] rounded-[2rem] shadow-2xl overflow-hidden"
       >
         {/* Sidebar */}
         <motion.div
@@ -197,9 +197,9 @@ const Dashboard = () => {
           transition={{ duration: 0.6, ease: "easeOut" }}
           className="relative flex"
         >
-          <aside className="w-[250px] bg-[#F8F9FA] flex flex-col py-6 px-6 rounded-l-[2rem]">
+          <aside className="w-[250px] bg-[#F8F9FA] dark:bg-[#2A2A3E] flex flex-col py-6 px-6 rounded-l-[2rem]">
             <div>
-              <p className="text-xl font-semibold italic text-center text-gray-800 mb-8 mt-6">
+              <p className="text-xl font-semibold italic text-center text-gray-800 dark:text-gray-200 mb-8 mt-6">
                 Hi, <span className="font-bold">{fullname}</span>!
               </p>
 
@@ -214,16 +214,9 @@ const Dashboard = () => {
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   onClick={() => navigate("/analytics")}
-                  className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"
+                  className="flex items-center gap-3 bg-[#F8F9FA] dark:bg-[#1E1E2A] hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] dark:text-gray-200 transition"
                 >
-                  <BarChart3 size={18} className="text-[#303345]" /> Analytics
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  onClick={() => navigate("/settings")}
-                  className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"
-                >
-                  <Settings size={18} className="text-[#303345]" /> Settings
+                  <BarChart3 size={18} className="text-[#303345] dark:text-gray-200" /> Analytics
                 </motion.button>
                 {isAdmin && (
                   <motion.button
@@ -247,22 +240,22 @@ const Dashboard = () => {
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => navigate("/profile")}
-                className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"
+                className="flex items-center gap-3 bg-[#F8F9FA] dark:bg-[#1E1E2A] hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] dark:text-gray-200 transition"
               >
-                <User size={18} className="text-[#303345]" /> Profile
+                <User size={18} className="text-[#303345] dark:text-gray-200" /> Profile
               </motion.button>
-              <div className="border-t border-gray-300" />
+              <div className="border-t border-gray-300 dark:border-gray-600" />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={handleLogout}
-                className="flex items-center gap-3 bg-[#F8F9FA] hover:bg-gray-100 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] transition"
+                className="flex items-center gap-3 bg-[#F8F9FA] dark:bg-[#1E1E2A] hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 w-full rounded-xl text-left font-medium text-[#303345] dark:text-gray-200 transition"
               >
-                <LogOut size={18} className="text-[#303345]" /> Log Out
+                <LogOut size={18} className="text-[#303345] dark:text-gray-200" /> Log Out
               </motion.button>
             </div>
           </aside>
 
-          <div className="w-[1px] bg-gray-300 my-8"></div>
+          <div className="w-[1px] bg-gray-300 dark:bg-gray-600 my-8"></div>
         </motion.div>
 
         {/* Main Content */}
@@ -270,12 +263,12 @@ const Dashboard = () => {
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
-          className="flex-1 p-10 flex flex-col bg-[#F8F9FA] rounded-r-[2rem] overflow-auto"
+          className="flex-1 p-10 flex flex-col bg-[#F8F9FA] dark:bg-[#1E1E2A] rounded-r-[2rem] overflow-auto"
         >
-          <h2 className="text-2xl font-extrabold text-[#14142B] mb-2">
+          <h2 className="text-2xl font-extrabold text-[#14142B] dark:text-white mb-2">
             WELCOME TO TEKTON GEOMETRIX INC
           </h2>
-          <p className="text-sm text-gray-700 mb-6">
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-6">
             Welcome Back! Here’s a quick look at your account activity.
           </p>
 
@@ -286,14 +279,14 @@ const Dashboard = () => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="flex-1 bg-white rounded-2xl shadow-md p-6 relative"
+              className="flex-1 bg-white dark:bg-[#2A2A3E] rounded-2xl shadow-md p-6 relative"
             >
-              <h3 className="text-lg font-semibold mb-4 text-[#303345]">Calendar</h3>
+              <h3 className="text-lg font-semibold mb-4 text-[#303345] dark:text-white">Calendar</h3>
               <div className="flex flex-col items-center">
                 <Calendar
                   onChange={setDate}
                   value={date}
-                  className="text-gray-800"
+                  className="text-gray-800 dark:text-gray-200"
                   tileContent={({ date: tileDate }) => {
                     const hasEvent = events.some(
                       (event) =>
@@ -312,12 +305,12 @@ const Dashboard = () => {
                     setNewEvent({ ...newEvent, date });
                     setShowModal(true);
                   }}
-                  className="mt-4 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition"
+                  className="mt-4 bg-slate-900 dark:bg-purple-600 hover:bg-slate-800 dark:hover:bg-purple-700 text-white px-4 py-2 rounded-lg shadow-md font-semibold transition"
                 >
                   + Add Event
                 </button>
 
-                <p className="mt-4 text-gray-700">
+                <p className="mt-4 text-gray-700 dark:text-gray-300">
                   Selected date: <span className="font-semibold">{date.toDateString()}</span>
                 </p>
 
@@ -331,11 +324,11 @@ const Dashboard = () => {
                     .map((event) => (
                       <div
                         key={event._id}
-                        className="bg-indigo-50 p-3 rounded-lg mb-2 text-slate-900 shadow-sm flex justify-between items-start border border-indigo-200"
+                        className="bg-indigo-50 dark:bg-[#1E1E2A] p-3 rounded-lg mb-2 text-slate-900 dark:text-white shadow-sm flex justify-between items-start border border-indigo-200 dark:border-indigo-900"
                       >
                         <div>
-                          <h4 className="font-bold text-slate-900">{event.title}</h4>
-                          <p className="text-sm text-slate-700">{event.description}</p>
+                          <h4 className="font-bold text-slate-900 dark:text-white">{event.title}</h4>
+                          <p className="text-sm text-slate-700 dark:text-gray-400">{event.description}</p>
                         </div>
 
                         <div className="flex gap-2">
@@ -372,7 +365,7 @@ const Dashboard = () => {
                   {events.filter(
                     (event) => new Date(event.date).toDateString() === date.toDateString()
                   ).length === 0 && (
-                    <p className="text-gray-500 text-sm italic">No events on this date.</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm italic">No events on this date.</p>
                   )}
                 </div>
               </div>
@@ -389,18 +382,18 @@ const Dashboard = () => {
                     initial={{ scale: 0.95, y: -20 }}
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.95, y: -20 }}
-                    className="bg-white rounded-2xl shadow-2xl p-6 w-[400px]"
+                    className="bg-white dark:bg-[#2A2A3E] rounded-2xl shadow-2xl p-6 w-[400px]"
                   >
-                    <h3 className="text-xl font-bold text-slate-900 mb-4">Delete Event</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">Delete Event</h3>
                     
-                    <p className="text-gray-700 mb-2">
+                    <p className="text-gray-700 dark:text-gray-300 mb-2">
                       Are you sure you want to delete this event?
                     </p>
-                    <p className="text-sm text-gray-600 mb-6 font-medium">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-6 font-medium">
                       {eventToDelete.title}
                     </p>
 
-                    <p className="text-sm text-red-600 mb-6 bg-red-50 p-3 rounded-lg">
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-6 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                       ⚠️ This action cannot be undone.
                     </p>
 
@@ -411,7 +404,7 @@ const Dashboard = () => {
                           setEventToDelete(null);
                         }}
                         disabled={isDeleting}
-                        className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition font-medium disabled:opacity-50"
+                        className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition font-medium disabled:opacity-50"
                       >
                         Cancel
                       </button>
@@ -434,7 +427,7 @@ const Dashboard = () => {
                           }
                         }}
                         disabled={isDeleting}
-                        className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-medium disabled:opacity-50"
+                        className="flex-1 px-4 py-2 bg-red-600 dark:bg-red-700 text-white rounded-lg hover:bg-red-700 dark:hover:bg-red-800 transition font-medium disabled:opacity-50"
                       >
                         {isDeleting ? "Deleting..." : "Delete"}
                       </button>
@@ -456,9 +449,9 @@ const Dashboard = () => {
                     initial={{ scale: 0.9, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     exit={{ scale: 0.9, opacity: 0 }}
-                    className="bg-white p-6 rounded-2xl shadow-xl w-[400px]"
+                    className="bg-white dark:bg-[#2A2A3E] p-6 rounded-2xl shadow-xl w-[400px]"
                   >
-                    <h3 className="text-lg font-bold text-slate-900 mb-4">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">
                       {newEvent._id ? "Edit Event" : "Add Event"}
                     </h3>
                     <form onSubmit={handleAddEvent} className="flex flex-col gap-3">
@@ -466,13 +459,13 @@ const Dashboard = () => {
                         type="text"
                         placeholder="Title"
                         required
-                        className="border-2 border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white"
+                        className="border-2 border-gray-300 dark:border-gray-600 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 bg-white dark:bg-[#1E1E2A]"
                         value={newEvent.title}
                         onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                       />
                       <textarea
                         placeholder="Description"
-                        className="border-2 border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 placeholder-gray-500 bg-white resize-none"
+                        className="border-2 border-gray-300 dark:border-gray-600 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-500 bg-white dark:bg-[#1E1E2A] resize-none"
                         value={newEvent.description}
                         onChange={(e) =>
                           setNewEvent({ ...newEvent, description: e.target.value })
@@ -480,7 +473,7 @@ const Dashboard = () => {
                       />
                       <input
                         type="date"
-                        className="border-2 border-gray-300 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 bg-white cursor-pointer"
+                        className="border-2 border-gray-300 dark:border-gray-600 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-slate-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-[#1E1E2A] cursor-pointer"
                         value={new Date(newEvent.date).toISOString().split("T")[0]}
                         onChange={(e) =>
                           setNewEvent({ ...newEvent, date: new Date(e.target.value) })
@@ -490,13 +483,13 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setShowModal(false)}
-                          className="px-3 py-1 rounded-lg bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium transition"
+                          className="px-3 py-1 rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-600 font-medium transition"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="px-3 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-medium transition"
+                          className="px-3 py-1 rounded-lg bg-slate-900 dark:bg-purple-600 hover:bg-slate-800 dark:hover:bg-purple-700 text-white font-medium transition"
                         >
                           {newEvent._id ? "Update" : "Add"}
                         </button>
@@ -515,12 +508,12 @@ const Dashboard = () => {
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="flex-1 bg-white rounded-2xl shadow-md p-6 overflow-auto"
+              className="flex-1 bg-white dark:bg-[#2A2A3E] rounded-2xl shadow-md p-6 overflow-auto"
             >
-              <h3 className="text-lg font-semibold mb-4 text-[#303345]">TO DOs</h3>
+              <h3 className="text-lg font-semibold mb-4 text-[#303345] dark:text-white">TO DOs</h3>
 
               {events.length === 0 ? (
-                <p className="text-gray-500 italic">No events yet. Add one to get started!</p>
+                <p className="text-gray-500 dark:text-gray-400 italic">No events yet. Add one to get started!</p>
               ) : (
                 <ul className="space-y-3 max-h-[300px] overflow-y-auto">
                   {[...events]
@@ -530,16 +523,16 @@ const Dashboard = () => {
                       <li
                         key={event._id}
                         onClick={() => setSelectedDate(new Date(event.date))}
-                        className="p-3 bg-indigo-50 rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-indigo-100 transition border border-indigo-200"
+                        className="p-3 bg-indigo-50 dark:bg-[#1E1E2A] rounded-lg shadow-sm flex justify-between items-center cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition border border-indigo-200 dark:border-indigo-900"
                       >
                         <div>
-                          <h4 className="font-bold text-slate-900">{event.title}</h4>
-                          <p className="text-sm text-slate-700">
+                          <h4 className="font-bold text-slate-900 dark:text-white">{event.title}</h4>
+                          <p className="text-sm text-slate-700 dark:text-gray-400">
                             {new Date(event.date).toLocaleDateString()} — {event.description}
                           </p>
                         </div>
                         {new Date(event.date).toDateString() === new Date().toDateString() && (
-                          <span className="text-xs font-medium bg-[#303345] text-white px-2 py-1 rounded">
+                          <span className="text-xs font-medium bg-[#303345] dark:bg-purple-600 text-white px-2 py-1 rounded">
                             Today
                           </span>
                         )}
